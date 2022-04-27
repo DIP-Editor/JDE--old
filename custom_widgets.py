@@ -1,5 +1,5 @@
-from readline import insert_text
 from tkinter import *
+from tkinter.filedialog import *
 from tkinter import colorchooser
 from tkinter.messagebox import *
 import os
@@ -740,7 +740,7 @@ class settings(Frame):
             fg = "#4f4c4d"
         self.settings_window.configure(background=bg)
         self.settings_window.title("Settings")
-        self.settings_window.geometry("375x350+0+0")
+        self.settings_window.geometry("375x450+0+0")
         self.settings_window.resizable(width=False, height=False)
         self.settings_window.attributes("-topmost", True)
         self.settings_window.focus_force()
@@ -755,32 +755,66 @@ class settings(Frame):
         # tag_definition
         # tag_class
         self.my_group_color_changer_button = Button(self.settings_window, text="MYGROUP Color Picker", font=("Courier New bold", 20), width=22, command=self.my_group_color_changer)
-        self.my_group_color_changer_button.place(relx=.5, rely=.175, anchor=CENTER)
+        self.my_group_color_changer_button.place(relx=.5, rely=.15, anchor=CENTER)
         self.my_group_color_changer_button.configure(highlightbackground=bg)
         self.comment_color_changer_button = Button(self.settings_window, text="COMMENT Color Picker", font=("Courier New bold", 20), width=22, command=self.comment_color_changer)
-        self.comment_color_changer_button.place(relx=.5, rely=.275, anchor=CENTER)
+        self.comment_color_changer_button.place(relx=.5, rely=.23055, anchor=CENTER)
         self.comment_color_changer_button.configure(highlightbackground=bg)
         self.keyword_color_changer_button = Button(self.settings_window, text="KEYWORD Color Picker", font=("Courier New bold", 20), width=22, command=self.keyword_color_changer)
-        self.keyword_color_changer_button.place(relx=.5, rely=.375, anchor=CENTER)
+        self.keyword_color_changer_button.place(relx=.5, rely=.3111, anchor=CENTER)
         self.keyword_color_changer_button.configure(highlightbackground=bg)
         self.builtin_color_changer_button = Button(self.settings_window, text="BUILTIN Color Picker", font=("Courier New bold", 20), width=22, command=self.builtin_color_changer)
-        self.builtin_color_changer_button.place(relx=.5, rely=.475, anchor=CENTER)
+        self.builtin_color_changer_button.place(relx=.5, rely=.39165, anchor=CENTER)
         self.builtin_color_changer_button.configure(highlightbackground=bg)
         self.string_color_changer_button = Button(self.settings_window, text="STRING Color Picker", font=("Courier New bold", 20), width=22, command=self.string_color_changer)
-        self.string_color_changer_button.place(relx=.5, rely=.575, anchor=CENTER)
+        self.string_color_changer_button.place(relx=.5, rely=.4722, anchor=CENTER)
         self.string_color_changer_button.configure(highlightbackground=bg)
         self.definition_color_changer_button = Button(self.settings_window, text="DEFINITION Color Picker", font=("Courier New bold", 20), width=22, command=self.definition_color_changer)
-        self.definition_color_changer_button.place(relx=.5, rely=.675, anchor=CENTER)
+        self.definition_color_changer_button.place(relx=.5, rely=.55275, anchor=CENTER)
         self.definition_color_changer_button.configure(highlightbackground=bg)
         self.class_color_changer_button = Button(self.settings_window, text="CLASS Color Picker", font=("Courier New bold", 20), width=22, command=self.class_color_changer)
-        self.class_color_changer_button.place(relx=.5, rely=.775, anchor=CENTER)
+        self.class_color_changer_button.place(relx=.5, rely=.6333, anchor=CENTER)
         self.class_color_changer_button.configure(highlightbackground=bg)
         self.keyword_changer_button = Button(self.settings_window, text="Keyword Changer", font=("Courier New bold", 20), width=22, command=self.keyword_changer)
-        self.keyword_changer_button.place(relx=.5, rely=.875, anchor=CENTER)
+        self.keyword_changer_button.place(relx=.5, rely=.71385, anchor=CENTER)
         self.keyword_changer_button.configure(highlightbackground=bg)
+        #import keywords.txt button
+        #export keywords.txt button
+        import_keywords_button = Button(self.settings_window, text="Import Keywords", font=("Courier New bold", 20), width=22, command=self.import_keywords)
+        import_keywords_button.place(relx=.5, rely=.7944, anchor=CENTER)
+        import_keywords_button.configure(highlightbackground=bg)
+        export_keywords_button = Button(self.settings_window, text="Export Keywords", font=("Courier New bold", 20), width=22, command=self.export_keywords)
+        export_keywords_button.place(relx=.5, rely=.87495, anchor=CENTER)
+        export_keywords_button.configure(highlightbackground=bg)
         self.quit_button = Button(self.settings_window, text="Quit", font=("Courier New bold", 15), command=self.quit)
         self.quit_button.place(relx=.5, rely=.95, anchor=CENTER)
         self.quit_button.configure(highlightbackground=bg)
+
+    def import_keywords(self):
+        global keywords_list
+        #Get the file path
+        file_path = askopenfilename(initialdir="/", title="Select file", filetypes=([("Text files", "*.txt")]))
+        #Check that the file path is not empty and the name is keywords.txt
+        if file_path != "" and file_path.endswith("keywords.txt"):
+            #update the keywords list
+            keywords_list = []
+            #open the file
+            with open(file_path, "r") as file:
+                #read the file
+                keywords_list = file.readlines()
+            #remove the newline characters
+            keywords_list = [keyword.replace("\n", "") for keyword in keywords_list]
+            #update the keywords list
+            update_list()
+
+    def export_keywords(self):
+        file_path = asksaveasfilename(initialdir="/", title="Select file", filetypes=([("Text files", "*.txt")]))
+        if file_path != "":
+            #open the file
+            with open(file_path, "w") as file:
+                #write the keywords to the file
+                for keyword in keywords_list:
+                    file.write(keyword + "\n")
 
     def color_changer(self, index):
         color = colorchooser.askcolor(title="Choose color")
@@ -1083,13 +1117,14 @@ class keyword_change_page(Frame):
 if __name__ == '__main__':
     root = Tk()
     root.title("Widget Testing")
-    width = root.winfo_screenwidth()
-    height = root.winfo_screenheight()
-    root.geometry("{}x{}+0+0".format(width, height))
-    # Main widget called ultra_text
-    text = ultra_text(root, window=root, color_mode = "Light", width=130, height=30)
-    text.place(relx=.5, rely=.5, anchor=CENTER)
-    text.text.focus()
-    text.change_color("Light")
-    # keyword_change_page(root, color_mode = "Light")
+    # width = root.winfo_screenwidth()
+    # height = root.winfo_screenheight()
+    # root.geometry("{}x{}+0+0".format(width, height))
+    # # Main widget called ultra_text
+    # text = ultra_text(root, window=root, color_mode = "Light", width=130, height=30)
+    # text.place(relx=.5, rely=.5, anchor=CENTER)
+    # text.text.focus()
+    # text.change_color("Light")
+    # # keyword_change_page(root, color_mode = "Light")
+    settings(root, color_mode = "Light")
     root.mainloop()
