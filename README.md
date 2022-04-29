@@ -16,7 +16,7 @@ _***Goals:***_
 - [ ] Windows Release
 - [ ] Fix Terminal
 - [ ] Add Drag and Drop
-- [ ] Convert to [Tukaan](https://tukaan.github.io/)
+- [ ] Convert to <a href="https://tukaan.github.io/" target="_blank">Tukaan</a>
 
 <br>
 
