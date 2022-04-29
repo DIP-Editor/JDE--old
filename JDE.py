@@ -401,6 +401,7 @@ for height in height_required_list:
 minimum_width = 0
 for width in width_required_list:
     minimum_width += width
-window.geometry("{}x{}".format(minimum_width, minimum_height))
+width, height = window.winfo_screenwidth(), window.winfo_screenheight()
+window.geometry("{}x{}+0+0".format(minimum_width, minimum_height))
 window.resizable(False, False)
 window.mainloop()
