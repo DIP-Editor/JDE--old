@@ -8,7 +8,6 @@ import os
 # from pygments import highlight
 # from pygments.lexers import PythonLexer
 # from idlelib.autocomplete import AutoComplete
-from typing_extensions import Self
 import idlelib.colorizer as ic
 import idlelib.percolator as ip
 import smtplib
@@ -115,7 +114,7 @@ class ultra_text(Frame):
         self.text.bind("]", self.close_square_braces)
         self.text.bind("<Command-slash>", self.make_comment)
         self.text.bind("<Shift-Tab>", self.back_tab)
-        self.text.bind("<KeyRelease-Return>", lambda x: [self.redraw(), self.new_line_indent(Self)], add="+")
+        self.text.bind("<KeyRelease-Return>", lambda x: [self.redraw(), self.new_line_indent(self)], add="+")
         self.text.bind("<Command-Shift-k>", self.delete_line)
         self.text.bind("<Command-b>", self.add_breakpoint)
 
