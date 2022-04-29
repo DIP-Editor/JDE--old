@@ -16,7 +16,7 @@ else:
     folder = Path(__file__).parent
 path_list = []
 window = Tk()
-current_version = "0.0.3"
+current_version = "0.0.4"
 try:
     version = get_version()
     def final_check():
@@ -26,9 +26,9 @@ try:
             if int(version_split[i]) < int(current_version_split[i]):
                 pass
             elif int(version_split[i]) > int(current_version_split[i]):
-                open_donwload = askyesno("Update Available", "A New Version Is Currently Available\n\nCurrent Version: {}\nNew Version: {}\nWould You Like To Download It?".format(current_version, get_version()))
+                open_donwload = askyesno("Update Available", "A New Version Is Currently Available\n\nYour Version: {}\nCurrent Version: {}\nWould You Like To Download It?".format(current_version, get_version()))
                 if open_donwload:
-                    webbrowser.open("https://joshuayacktman.wixsite.com/-jde")
+                    webbrowser.open("https://jde-org.github.io/")
                 break
             else:
                 pass
@@ -55,8 +55,9 @@ s = Style(window)
 s.theme_use("clam")
 def about():
     showinfo("JDE", "JDE is an IDE for Python\n\nCreated by: Joshua R. Yacktman\nBeta Version: {}".format(current_version))
-width, height = window.winfo_screenwidth(), window.winfo_screenheight()
-window.geometry("%dx%d+0+0" % (1155, 797.5))
+# window.geometry("%dx%d+0+0" % (1110, 720))
+# window.wm_minsize(1110, 720)
+#Width, Height, X, Y
 window.title("Josh's Development Environment")
 main_label = Label(window, text="Josh's Development Environment", font=("Courier New bold", 35))
 main_label.place(relx=0.5, y=30, anchor=CENTER)
@@ -70,8 +71,8 @@ main_notebook.add(main_text_box)
 current_focus = main_notebook.index("current")
 main_notebook.tab(text_boxes[current_focus], text="Untitled.py")
 main_text_box.text.focus()
-the_terminal = Terminal(window, font=("Courier New bold", 15), relief=SUNKEN, borderwidth=5, width=125, height=10)
-the_terminal.place(relx=.5, rely=.855, anchor=CENTER)
+the_terminal = Terminal(window, font=("Courier New bold", 15), relief=SUNKEN, borderwidth=5, width=119, height=9)
+the_terminal.place(relx=.5, rely=.85, anchor=CENTER)
 the_terminal.shell = True
 the_terminal.basename = "JDE: "
 the_terminal.run_command("cd /")
@@ -383,4 +384,23 @@ settings_button.configure(highlightbackground=bg)
 main_notebook.bind('<Double-Button-1>', create_new_tab)
 text_boxes[0].insert("insert",  "#  .----------------.  .----------------.  .----------------. \n# | .--------------. || .--------------. || .--------------. |\n# | |     _____    | || |  ________    | || |  _________   | |\n# | |    |_   _|   | || | |_   ___ `.  | || | |_   ___  |  | |\n# | |      | |     | || |   | |   `. \ | || |   | |_  \_|  | |\n# | |   _  | |     | || |   | |    | | | || |   |  _|  _   | |\n# | |  | |_' |     | || |  _| |___.' / | || |  _| |___/ |  | |\n# | |  `.___.'     | || | |________.'  | || | |_________|  | |\n# | |              | || |              | || |              | |\n# | '--------------' || '--------------' || '--------------' |\n#  '----------------'  '----------------'  '----------------' \n\n# Welcome to Josh's Development Environment!")
 window.after(150, text_boxes[0].redraw)
+height_widget_list = [main_label, main_notebook, the_terminal, quit_button, settings_button]
+width_height_list = [commands_label, main_notebook, quit_button]
+widget_list = [main_label, main_notebook, the_terminal, quit_button, settings_button, commands_label]
+for widget in widget_list:
+    widget.update()
+height_required_list = []
+width_required_list = []
+for widget in height_widget_list:
+    height_required_list.append(int(widget.winfo_height()))
+for widget in width_height_list:
+    width_required_list.append(int(widget.winfo_width()))
+minimum_height = 0
+for height in height_required_list:
+    minimum_height += height
+minimum_width = 0
+for width in width_required_list:
+    minimum_width += width
+window.geometry("{}x{}".format(minimum_width, minimum_height))
+window.resizable(False, False)
 window.mainloop()

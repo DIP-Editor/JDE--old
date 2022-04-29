@@ -71,7 +71,7 @@ class ultra_text(Frame):
             self.text = Text(self, height=kwargs["height"], width=kwargs["width"], borderwidth=2, relief=RIDGE, wrap=NONE, undo=True, font=("Courier New bold", 15))
         else:
             #, width=130, height=29
-            self.text = Text(self, font=("Courier New bold", 15), wrap="none", undo=True, borderwidth=2, relief=RIDGE, width=100, height=29)
+            self.text = Text(self, font=("Courier New bold", 15), wrap="none", undo=True, borderwidth=2, relief=RIDGE, width=95, height=25)
         ip.Percolator(self.text).insertfilter(self.cdg)
         # self.our_autocomplete = AutoComplete(self)
 
@@ -93,12 +93,13 @@ class ultra_text(Frame):
         # self.window.bind("<Motion>", self.update_location)
         # self.window.bind("<Button-1>", self.update_location)
 
+        self.window.bind("<Any>", self.redraw())
+        self.window.bind("<BackSpace>", lambda x: self.after(10, (self.redraw())))
+
         self.text.bind("<Key>", self.onPressDelay)
         self.text.bind("<Button-1>", self.numberLines.redraw)
         self.scrollbar.bind("<Button-1>", self.onScrollPress)
         self.text.bind("<MouseWheel>", self.onPressDelay)
-
-        self.window.bind("<KeyRelease>", self.redraw())
 
         self.text.bind("<Any-KeyRelease>", self._autocomplete)
 
@@ -1117,14 +1118,14 @@ class keyword_change_page(Frame):
 if __name__ == '__main__':
     root = Tk()
     root.title("Widget Testing")
-    # width = root.winfo_screenwidth()
-    # height = root.winfo_screenheight()
-    # root.geometry("{}x{}+0+0".format(width, height))
-    # # Main widget called ultra_text
-    # text = ultra_text(root, window=root, color_mode = "Light", width=130, height=30)
-    # text.place(relx=.5, rely=.5, anchor=CENTER)
-    # text.text.focus()
-    # text.change_color("Light")
+    width = root.winfo_screenwidth()
+    height = root.winfo_screenheight()
+    root.geometry("{}x{}+0+0".format(width, height))
+    # Main widget called ultra_text
+    text = ultra_text(root, window=root, color_mode = "Light", width=130, height=30)
+    text.place(relx=.5, rely=.5, anchor=CENTER)
+    text.text.focus()
+    text.change_color("Light")
     # # keyword_change_page(root, color_mode = "Light")
-    settings(root, color_mode = "Light")
+    # settings(root, color_mode = "Light")
     root.mainloop()
