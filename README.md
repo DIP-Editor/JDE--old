@@ -2,16 +2,21 @@
 # JDE:
 > # An IDE made in tkinter for python and editing plain text files
 <br>
-<img width="1440" alt="Screen Shot 2022-04-21 at 11 30 21 PM" src="https://user-images.githubusercontent.com/95927277/164590719-c332a0ff-c5c7-4358-bfde-225ffb2ec803.png">
+
+<img width="1233" alt="bg" src="https://user-images.githubusercontent.com/95927277/165965795-15447c46-0944-4e5e-bbb3-0a892a03a9a5.png">
 
 <br>
 
 _***Goals:***_
-- [ ] Finish adding main features
+- [x] Finish adding main features
 
-- [ ] Fix all compilation bugs
+- [x] Fix all compilation bugs
 
-- [ ] Make releases
+- [x] Make Mac release
+- [ ] Windows Release
+- [ ] Fix Terminal
+- [ ] Add Drag and Drop
+- [ ] Convert to [Tukaan](https://tukaan.github.io/)
 
 <br>
 
@@ -49,4 +54,6 @@ _***Goals:***_
 - Fix syntax highlighting when color mode changed
 - Multi-file support:
   - Adding scrolllbar to make notebook not extend over window
+- Drag and drop
+- Documentation
 - More
