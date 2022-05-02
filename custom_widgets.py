@@ -254,7 +254,7 @@ class ultra_text(Frame):
         else:
             bg = "white"
             fg = "#4f4c4d"
-        # self.config(background=bg)
+        self.config(background=bg)
         self.text.config(bg=bg, fg=fg, insertbackground=fg)
         self.numberLines.config(bg=bg)
         # self.numberLines.change_color_var(new_color)

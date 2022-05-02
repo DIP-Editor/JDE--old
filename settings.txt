@@ -5,4 +5,4 @@
 #b80404
 #e07eac
 #74718a
-light
+Dark
