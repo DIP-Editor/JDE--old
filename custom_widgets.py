@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter.filedialog import *
 from tkinter import colorchooser
+from tkinter.font import Font
 from tkinter.messagebox import *
 import os
 # from pygments import *
@@ -15,7 +16,7 @@ import re
 from os import listdir
 import sys
 from pathlib import Path
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     folder = Path(sys._MEIPASS)
 else:
     folder = Path(__file__).parent
@@ -72,17 +73,12 @@ class ultra_text(Frame):
             #, width=130, height=29
             self.text = Text(self, font=("Courier New bold", 15), wrap="none", undo=True, borderwidth=2, relief=RIDGE, width=95, height=25)
         ip.Percolator(self.text).insertfilter(self.cdg)
-        # self.our_autocomplete = AutoComplete(self)
 
         self.scrollbar = Scrollbar(self, orient=VERTICAL, command=self.text.yview)
         self.text.configure(yscrollcommand=self.scrollbar.set)
 
-
         self.numberLines = TextLineNumbers(self, width=40)
         self.numberLines.attach(self.text)
-
-        # self.insert_placement_label = Label(self, text="1:0", font=("Courier New bold", 15))
-        # self.insert_placement_label.pack(side=BOTTOM, anchor=SE, padx=10)
 
         self.scrollbar.pack(side=RIGHT, fill=Y)
         self.numberLines.pack(side=LEFT, fill=Y, padx=(5, 0))
@@ -93,7 +89,7 @@ class ultra_text(Frame):
         # self.window.bind("<Button-1>", self.update_location)
 
         self.window.bind("<Any>", self.redraw())
-        self.window.bind("<BackSpace>", lambda x: self.after(10, (self.redraw())))
+        self.window.bind("<BackSpace>", lambda x: self.after(10, (self.redraw())), add=True)
 
         self.text.bind("<Key>", self.onPressDelay)
         self.text.bind("<Button-1>", self.numberLines.redraw)
@@ -102,12 +98,13 @@ class ultra_text(Frame):
 
         self.text.bind("<Any-KeyRelease>", self._autocomplete)
 
-        self.text.bind("<Tab>", self._handle_tab)
+        self.text.bind("<Tab>", self._handle_tab, add=True)
 
         self.text.bind("\"", self.double_quotes)
         self.text.bind("(", self.double_parentheses)
         self.text.bind(")", self.close_parentheses)
-        self.text.bind("<BackSpace>", self.closing_backspace)
+        self.text.bind("<BackSpace>", self.closing_backspace, add=True)
+        self.text.bind("<BackSpace>", self.remove_indentation, add=True)
         self.text.bind("{", self.double_curly_braces)
         self.text.bind("}", self.close_curly_braces)
         self.text.bind("[", self.double_square_braces)
@@ -118,7 +115,26 @@ class ultra_text(Frame):
         self.text.bind("<Command-Shift-k>", self.delete_line)
         self.text.bind("<Command-b>", self.add_breakpoint)
 
-        # self.text.bind("<Tab>", self.tab_pressed)
+        font = Font(font=self.text["font"])
+        tab_width = font.measure("    ")
+        self.text.config(tabs=(tab_width))
+
+    def remove_indentation(self, event=None):
+        #Get the current line contents
+        current_line_contents = self.text.get("insert linestart", "insert lineend")
+        #Get the current position
+        current_position = int((self.text.index(INSERT)).split(".")[1])
+        # Check if the current line is empty
+        if current_line_contents != "":
+            #Check if the current line is indented with four spaces
+            if "    " in current_line_contents:
+                #Check if previous four characters are to the left of the cursor and are spaces
+                if current_line_contents[current_position-4:current_position] == "    ":
+                    # Remove three spaces from the left of the cursor
+                    new_line_contents = current_line_contents[:current_position-3] + current_line_contents[current_position:]
+                    self.text.delete("insert linestart", "insert lineend")
+                    self.text.insert("insert", new_line_contents)
+                    self.text.mark_set("insert", "{}.{}".format(int(self.text.index("insert").split(".")[0]), current_position-3))
 
     def close_parentheses(self, event):
         try:
@@ -240,11 +256,6 @@ class ultra_text(Frame):
             self.text.insert(1.0, new_contents)
             self.text.mark_set(INSERT, INSERT)
 
-
-    # def tab_pressed(self, event: Event):    
-    #     self.text.insert("insert", " "*4)
-    #     return "break"
-
 # #Place tag_config here
 
     def change_color(self, new_color):
@@ -257,9 +268,6 @@ class ultra_text(Frame):
         self.config(background=bg)
         self.text.config(bg=bg, fg=fg, insertbackground=fg)
         self.numberLines.config(bg=bg)
-        # self.numberLines.change_color_var(new_color)
-        # self.numberLines.redraw()
-        # self.insert_placement_label.config(bg=bg, fg=fg)
 
     def reset_syntax(self, event=None, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
@@ -307,6 +315,9 @@ class ultra_text(Frame):
             self.text.tag_remove("sel", "1.0", "end")
             self.text.tag_remove("autocomplete", "1.0", "end")
             return "break"
+        else:
+            self.text.insert(INSERT, "    ")
+            return "break"
 
     def _autocomplete(self, event):
         if event.char and self.callback and event.keysym != "BackSpace":
@@ -317,11 +328,6 @@ class ultra_text(Frame):
                 insert = self.text.index("insert")
                 self.text.insert(insert, remainder, ("sel", "autocomplete"))
                 self.text.mark_set("insert", insert)
-
-    # def update_location(self, event=None):
-    #     placement = (self.text.index("insert")).split(".")
-    #     placement = placement[0] + ":" + placement[1]
-    #     self.insert_placement_label.config(text=placement)
 
     def make_find_and_replace(self, event=None, **kwargs):
         color_mode = kwargs.pop("color_mode")
@@ -408,18 +414,31 @@ class ultra_text(Frame):
         editable_line = str(line)
         if editable_line != "":
             if line[0] != "#":
-                if "    " not in editable_line:
-                    for i in range(editable_line.count("\t")):
-                        self.text.insert("insert", "\t")
-                    if editable_line[-1] == ":":
-                        self.text.insert("insert", "\t")
-                else:
-                    for i in range(editable_line.count("    ")):
-                        self.text.insert("insert", "    ")
-                    if editable_line[-1] == ":":
-                        self.text.insert("insert", "    ")
+                if "    " in editable_line:
+                    #Get the tab count
+                    tab_count = editable_line.count("    ")
+                    space_count = tab_count * 4
+                    # Check that the first space_count characters are spaces
+                    if editable_line[:space_count] == " " * space_count:
+                        for i in range(editable_line.count("    ")):
+                            self.text.insert("insert", "    ")
+                    else:
+                        locations = [m.start() for m in re.finditer('    ', editable_line)]
+                        if locations[0] == 0:
+                            for i in range(tab_count):
+                                #Get distance from this location to last location
+                                distance = locations[i+1] - locations[i]
+                                if distance > 4:
+                                    tab_count = i+1
+                                    break
+                            for i in range(tab_count):
+                                self.text.insert("insert", "    ")
+                if editable_line[-1] == ":":
+                    self.text.insert("insert", "    ")
+
     def get_text(self):
         return self.text.get("1.0", "end")
+
     def return_anchor(self, event):
         return self.text.index("insert")
     
@@ -456,7 +475,7 @@ class TextLineNumbers(Canvas):
         self.textwidget = text_widget
 
     def redraw(self, *args):
-        '''redraw line numbers'''
+        """redraw line numbers"""
         self.delete("all")
 
         i = self.textwidget.index("@0,0")
@@ -521,7 +540,7 @@ class search_text(Frame):
                 idx = self.search_list[-1]
 
             idx = self.text.search(self.s, idx, nocase=1, stopindex=END)
-            lastidx = '%s+%dc' % (idx, len(self.s))
+            lastidx = "%s+%dc" % (idx, len(self.s))
 
             try:
                 self.text.tag_remove(SEL, 1.0,lastidx)
@@ -531,7 +550,7 @@ class search_text(Frame):
             try:
                 self.text.tag_add(SEL, idx, lastidx)
                 counter_list = []
-                counter_list = str(idx).split('.')      
+                counter_list = str(idx).split(".")      
                 self.text.mark_set("insert", "%d.%d" % (float(int(counter_list[0])), float(int(counter_list[1]))))
                 self.text.see(float(int(counter_list[0])))
                 self.search_list.append(lastidx)
@@ -1114,7 +1133,7 @@ class keyword_change_page(Frame):
         self.keyword_change_page_window.destroy()
 
 #Testing purposes
-if __name__ == '__main__':
+if __name__ == "__main__":
     root = Tk()
     root.title("Widget Testing")
     width = root.winfo_screenwidth()

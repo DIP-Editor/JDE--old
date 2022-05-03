@@ -2,6 +2,7 @@ from
 tkinter
 i
 import
+for
 font
 Tk
 winfo_screenwidth
@@ -37,7 +38,6 @@ is
 return
 and
 continue
-for
 lambda
 try
 as
