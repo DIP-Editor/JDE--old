@@ -34,6 +34,24 @@ def update_list():
         for item in keywords_list:
             f.write(item + "\n")
 
+class ToolTip(Frame):
+    def __init__(self, master, *args, **kwargs):
+        self.window = kwargs.pop("window")
+        self.tooltip_text = kwargs.pop("text")
+        Frame.__init__(self, *args, **kwargs)
+        self.overall_widget = master
+        self.height = int(self.overall_widget.winfo_height())
+        self.overall_widget.bind("<Enter>", self.create_label)
+        self.overall_widget.bind("<Leave>", self.destroy_label)
+        self.overall_widget.bind("<ButtonPress>", self.destroy_label)
+
+    def create_label(self, event):
+        self.tooltip = Label(self.window, text=self.tooltip_text, bg="yellow", fg="black", bd=1, relief=SOLID, font=("Courier New bold",15))
+        self.tooltip.place(x=self.overall_widget.winfo_x()+self.overall_widget.winfo_width()+5, y=self.overall_widget.winfo_y())
+    
+    def destroy_label(self, event):
+        self.tooltip.destroy()
+
 class ultra_text(Frame):
     def __init__(self, *args, **kwargs):
         self.window = kwargs.pop("window", None)
@@ -423,7 +441,7 @@ class ultra_text(Frame):
                         for i in range(editable_line.count("    ")):
                             self.text.insert("insert", "    ")
                     else:
-                        locations = [m.start() for m in re.finditer('    ', editable_line)]
+                        locations = [m.start() for m in re.finditer("    ", editable_line)]
                         if locations[0] == 0:
                             for i in range(tab_count):
                                 #Get distance from this location to last location
@@ -500,7 +518,7 @@ class search_text(Frame):
         self.search_text_window = Toplevel(self)
         self.search_text_window.title("Search / Find and Replace")
         self.search_text_window.config(bg=bg)
-        self.search_text_window.geometry("700x30+0+0")
+        self.search_text_window.geometry("+0+0")
         self.search_text_window.attributes("-topmost", True)
         self.text_search_entry = Entry(self.search_text_window, borderwidth=3, font=("Courier New bold", 15))
         self.search_button = Button(self.search_text_window, text="Search File", font=("Courier New bold", 15), command=self.find)
@@ -890,7 +908,7 @@ class report_bug(Frame):
         self.report_bug_window = Toplevel()
         self.report_bug_window.configure(background=bg)
         self.report_bug_window.title("Report Bug")
-        self.report_bug_window.geometry("400x350+0+0")
+        self.report_bug_window.geometry("410x350+0+0")
         self.report_bug_window.resizable(width=False, height=False)
         self.report_bug_window.attributes("-topmost", True)
         self.report_bug_window.focus_force()
