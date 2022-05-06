@@ -156,21 +156,21 @@
 #     root.mainloop()
 
 
-from tkinter import *
-from custom_widgets import *
-root = Tk()
-root.title("Test")
-root.geometry("800x600+0+0")
-a_button = Button(root, text="Button", font=("Courier New bold", 25), command=lambda:print("Button pressed"))
-a_button.pack()
-ToolTip(a_button, text="This is a button", window=root)
-run_img = PhotoImage(file="Run.png")
-run_button = Button(root, image=run_img, command=lambda:print("Run"))
-run_button.pack()
-ToolTip(run_button, text="Runs file", window=root)
-#create 5 buttons with tooltips
-for i in range(5):
-    button = Button(root, text=f"Button {i}", font=("Courier New bold", 25), command=lambda:print(f"Button {i} pressed"))
-    button.pack()
-    ToolTip(button, text=f"Button {i}", window=root)
-root.mainloop()
+# from tkinter import *
+# from custom_widgets import *
+# root = Tk()
+# root.title("Test")
+# root.geometry("800x600+0+0")
+# a_button = Button(root, text="Button", font=("Courier New bold", 25), command=lambda:print("Button pressed"))
+# a_button.pack()
+# ToolTip(a_button, text="This is a button", window=root)
+# run_img = PhotoImage(file="Run.png")
+# run_button = Button(root, image=run_img, command=lambda:print("Run"))
+# run_button.pack()
+# ToolTip(run_button, text="Runs file", window=root)
+# #create 5 buttons with tooltips
+# for i in range(5):
+#     button = Button(root, text=f"Button {i}", font=("Courier New bold", 25), command=lambda:print(f"Button {i} pressed"))
+#     button.pack()
+#     ToolTip(button, text=f"Button {i}", window=root)
+# root.mainloop()
