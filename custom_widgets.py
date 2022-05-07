@@ -616,7 +616,7 @@ class temp_name_pop_up:
         else:
             bg = "white"
             fg = "#4f4c4d"
-        self.text_info = text_info
+        self.text_info = text_info.get("1.0", END)
         self.pop_up_window = Toplevel()
         self.pop_up_window.title("Template Name")
         self.pop_up_window.config(bg=bg)
@@ -688,6 +688,7 @@ class temp_open_pop_up(Frame):
         self.temp_open_pop_up_listbox.place(relx=.5, rely=.5, anchor=CENTER)
         self.temp_open_pop_up_listbox.configure(selectbackground=bg, selectforeground=fg)
         for item in self.templates_list:
+            item = item.split(".py")[0]
             self.temp_open_pop_up_listbox.insert(END, item)
         self.confirm_button = Button(self.temp_open_pop_up_window, text="Confirm", font=("Courier New bold", 15), command=self.confirm)
         self.confirm_button.place(relx=.1, rely=.95, anchor=CENTER)
@@ -701,8 +702,8 @@ class temp_open_pop_up(Frame):
         self.text = text
 
     def confirm(self):
-        self.file_chosen = self.temp_open_pop_up_listbox.get(ANCHOR)
-        if self.file_chosen != "":
+        self.file_chosen = self.temp_open_pop_up_listbox.get(ANCHOR) + ".py"
+        if self.file_chosen != ".py":
             self.text.delete(1.0, END)
             with open(folder / self.file_chosen, "r") as f:
                 self.text.insert(END, f.read())
@@ -743,6 +744,7 @@ class temp_destroy_pop_up:
         self.temp_destroy_pop_up_listbox.place(relx=.5, rely=.5, anchor=CENTER)
         self.temp_destroy_pop_up_listbox.configure(selectbackground=bg, selectforeground=fg)
         for item in self.templates_list:
+            item = item.split(".py")[0]
             self.temp_destroy_pop_up_listbox.insert(END, item)
         self.confirm_button = Button(self.temp_destroy_pop_up_window, text="Confirm", font=("Courier New bold", 15), command=self.confirm)
         self.confirm_button.place(relx=.1, rely=.95, anchor=CENTER)
@@ -752,8 +754,8 @@ class temp_destroy_pop_up:
         self.cancel_button.configure(highlightbackground=bg)
 
     def confirm(self):
-        self.file_chosen = self.temp_destroy_pop_up_listbox.get(ANCHOR)
-        if self.file_chosen != "":
+        self.file_chosen = self.temp_destroy_pop_up_listbox.get(ANCHOR) + ".py"
+        if self.file_chosen != ".py":
             os.remove(folder / self.file_chosen)
             self.temp_destroy_pop_up_window.destroy()
             showinfo("Template Deleted", "Template Deleted\n\nTemplate Has Been Beleted")
