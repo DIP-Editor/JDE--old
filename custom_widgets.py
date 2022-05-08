@@ -693,7 +693,7 @@ class temp_open_pop_up(Frame):
         for item in self.templates_list:
             item = item.split(".py")[0]
             self.temp_open_pop_up_listbox.insert(END, item)
-        self.export_img = PhotoImage(file="export_template.png")
+        self.export_img = PhotoImage(file=str(folder / "export_template.png"))
         self.export_button = Button(self.temp_open_pop_up_window, image=self.export_img, command=self.export_template)
         self.export_button.place(relx=.5, rely=.9, anchor=CENTER)
         self.export_button.configure( highlightbackground=bg)
