@@ -1,9 +1,11 @@
+from curses import window
 from tkinter import *
 from tkinter.filedialog import *
 from tkinter import colorchooser
 from tkinter.font import Font
 from tkinter.messagebox import *
 import os
+from turtle import color
 # from pygments import *
 # from pygments.formatters import *
 # from pygments import highlight
@@ -102,10 +104,6 @@ class ultra_text(Frame):
         self.numberLines.pack(side=LEFT, fill=Y, padx=(5, 0))
         self.text.pack(side=RIGHT, fill=BOTH, expand=True)
 
-        # self.window.bind("<KeyRelease>", self.update_location)
-        # self.window.bind("<Motion>", self.update_location)
-        # self.window.bind("<Button-1>", self.update_location)
-
         self.window.bind("<Any>", self.redraw())
         self.window.bind("<BackSpace>", lambda x: self.after(10, (self.redraw())), add=True)
 
@@ -138,6 +136,7 @@ class ultra_text(Frame):
         self.text.config(tabs=(tab_width))
 
     def remove_indentation(self, event=None):
+        #Print yview
         #Get the current line contents
         current_line_contents = self.text.get("insert linestart", "insert lineend")
         #Get the current position
@@ -274,8 +273,6 @@ class ultra_text(Frame):
             self.text.insert(1.0, new_contents)
             self.text.mark_set(INSERT, INSERT)
 
-# #Place tag_config here
-
     def change_color(self, new_color):
         if new_color == "Dark":
             bg = "#4f4c4d"
@@ -347,15 +344,15 @@ class ultra_text(Frame):
                 self.text.insert(insert, remainder, ("sel", "autocomplete"))
                 self.text.mark_set("insert", insert)
 
-    def make_find_and_replace(self, event=None, **kwargs):
+    def make_find_and_replace(self, x, y, event=None, **kwargs):
         color_mode = kwargs.pop("color_mode")
-        self.search_bar = search_text(self, color_mode = color_mode)
+        self.search_bar = search_text(self, x=x, y=y, color_mode = color_mode)
         self.search_bar.attach(self.text)
         self.search_bar.focus_set()
 
-    def open_template(self, event=None, **kwargs):
+    def open_template(self, x, y, event=None, **kwargs):
         color_mode = kwargs.pop("color_mode")
-        self.open_template = temp_open_pop_up(self, text=self.text, color_mode=color_mode)
+        self.open_template = temp_open_pop_up(self, text=self.text, x=x, y=y, color_mode=color_mode)
         # self.open_template.attach(self.text)
 
     def double_parentheses(self, event):
@@ -508,6 +505,8 @@ class TextLineNumbers(Canvas):
 class search_text(Frame):
     def __init__(self, *args, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
             bg = "#4f4c4d"
@@ -518,7 +517,7 @@ class search_text(Frame):
         self.search_text_window = Toplevel(self)
         self.search_text_window.title("Search / Find and Replace")
         self.search_text_window.config(bg=bg)
-        self.search_text_window.geometry("+0+0")
+        self.search_text_window.geometry("+{}+{}".format(self.x, self.y))
         self.search_text_window.attributes("-topmost", True)
         self.text_search_entry = Entry(self.search_text_window, borderwidth=3, font=("Courier New bold", 15))
         self.search_button = Button(self.search_text_window, text="Search File", font=("Courier New bold", 15), command=self.find)
@@ -610,6 +609,8 @@ class search_text(Frame):
 class temp_name_pop_up:
     def __init__(self, text_info, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         if self.color_mode == "Dark":
             bg = "#4f4c4d"
             fg = "white"
@@ -620,7 +621,7 @@ class temp_name_pop_up:
         self.pop_up_window = Toplevel()
         self.pop_up_window.title("Template Name")
         self.pop_up_window.config(bg=bg)
-        self.pop_up_window.geometry("300x100+0+0")
+        self.pop_up_window.geometry("300x100+{}+{}".format(self.x, self.y))
         self.pop_up_window.resizable(width=False, height=False)
         self.pop_up_window.focus_force()
         self.pop_up_name_label = Label(self.pop_up_window, text="Template Name:", font=("Courier New bold", 15))
@@ -662,6 +663,8 @@ class temp_open_pop_up(Frame):
     def __init__(self, *args, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
         self.text = kwargs.pop("text")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
             bg = "#4f4c4d"
@@ -672,7 +675,7 @@ class temp_open_pop_up(Frame):
         self.temp_open_pop_up_window = Toplevel()
         self.temp_open_pop_up_window.title("Template Selection")
         self.temp_open_pop_up_window.config(bg=bg)
-        self.temp_open_pop_up_window.geometry("400x300+0+0")
+        self.temp_open_pop_up_window.geometry("400x300+{}+{}".format(self.x, self.y))
         self.temp_open_pop_up_window.resizable(width=False, height=False)
         self.temp_open_pop_up_window.attributes("-topmost", True)
         self.templates_start_list = listdir(folder)
@@ -690,6 +693,11 @@ class temp_open_pop_up(Frame):
         for item in self.templates_list:
             item = item.split(".py")[0]
             self.temp_open_pop_up_listbox.insert(END, item)
+        self.export_img = PhotoImage(file="export_template.png")
+        self.export_button = Button(self.temp_open_pop_up_window, image=self.export_img, command=self.export_template)
+        self.export_button.place(relx=.5, rely=.9, anchor=CENTER)
+        self.export_button.configure( highlightbackground=bg)
+        ToolTip(self.export_button, text="Export Template", window=self.temp_open_pop_up_window)
         self.confirm_button = Button(self.temp_open_pop_up_window, text="Confirm", font=("Courier New bold", 15), command=self.confirm)
         self.confirm_button.place(relx=.1, rely=.95, anchor=CENTER)
         self.confirm_button.configure(highlightbackground=bg)
@@ -697,6 +705,13 @@ class temp_open_pop_up(Frame):
         self.cancel_button.place(relx=.9, rely=.95, anchor=CENTER)
         self.cancel_button.configure(highlightbackground=bg)
         self.temp_open_pop_up_window.mainloop()
+
+    def export_template(self):
+        self.file_chosen = self.temp_open_pop_up_listbox.get(ANCHOR) + ".py"
+        if self.file_chosen != ".py":
+            asksaveasfile(initialfile=self.file_chosen, defaultextension=".py", filetypes=[("Python Files", "*.py")], initialdir="/")
+        else:
+            showinfo("Export Error", "No Template Selected\n\nPlease Select A Template To Export")
 
     def attach(self, text):
         self.text = text
@@ -719,6 +734,8 @@ class temp_open_pop_up(Frame):
 class temp_destroy_pop_up:
     def __init__(self, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         if self.color_mode == "Dark":
             bg = "#4f4c4d"
             fg = "white"
@@ -728,7 +745,7 @@ class temp_destroy_pop_up:
         self.temp_destroy_pop_up_window = Toplevel()
         self.temp_destroy_pop_up_window.title("Template Selection")
         self.temp_destroy_pop_up_window.config(bg=bg)
-        self.temp_destroy_pop_up_window.geometry("400x300+0+0")
+        self.temp_destroy_pop_up_window.geometry("400x300+{}+{}".format(self.x, self.y))
         self.temp_destroy_pop_up_window.resizable(width=False, height=False)
         self.temp_destroy_pop_up_window.focus_force()
         self.templates_start_list = listdir(folder)

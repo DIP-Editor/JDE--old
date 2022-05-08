@@ -4,6 +4,7 @@ i
 import
 for
 font
+window
 Tk
 winfo_screenwidth
 winfo_screenheight
