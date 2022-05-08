@@ -1,11 +1,9 @@
-from curses import window
 from tkinter import *
 from tkinter.filedialog import *
 from tkinter import colorchooser
 from tkinter.font import Font
 from tkinter.messagebox import *
 import os
-from turtle import color
 # from pygments import *
 # from pygments.formatters import *
 # from pygments import highlight
