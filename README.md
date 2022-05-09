@@ -46,6 +46,8 @@ _***Goals:***_
 - Shortcuts window
 - Settings function to add keywords to autocomplete
 - Update reminder
+- Documentation
+- Reset Button
 
 <br>
 
@@ -53,7 +55,6 @@ _***Goals:***_
 - Fixed terminal
 - Fix syntax highlighting when color mode changed
 - Multi-file support:
-  - Adding scrolllbar to make notebook not extend over window
+  - Make notebook not extend over window
 - Drag and drop
-- Documentation
 - More
