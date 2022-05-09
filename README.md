@@ -3,7 +3,7 @@
 > # An IDE made in tkinter for python and editing plain text files
 <br>
 
-<img width="1233" alt="bg" src="https://user-images.githubusercontent.com/95927277/165965795-15447c46-0944-4e5e-bbb3-0a892a03a9a5.png">
+<img width="1129" alt="bg" src="https://user-images.githubusercontent.com/95927277/167404675-85fd5d14-e25e-453a-b090-45b23b1846c0.png">
 
 <br>
 
