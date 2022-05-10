@@ -1,8 +1,8 @@
+for
 from
 tkinter
 i
 import
-for
 font
 window
 Tk

@@ -133,6 +133,11 @@ class ultra_text(Frame):
         tab_width = font.measure("    ")
         self.text.config(tabs=(tab_width))
 
+        # self.temporary_autocomplete_list = []
+        # for i in range(len(keywords_list)):
+        #     self.temporary_autocomplete_list.append(keywords_list[i])
+        # self.window.bind("<Any>", self.parse_text())
+
     def remove_indentation(self, event=None):
         #Print yview
         #Get the current line contents
@@ -282,42 +287,31 @@ class ultra_text(Frame):
         self.text.config(bg=bg, fg=fg, insertbackground=fg)
         self.numberLines.config(bg=bg)
 
-    def reset_syntax(self, event=None, **kwargs):
-        self.color_mode = kwargs.pop("color_mode")
-        if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
-        else:
-            bg = "white"
-            fg = "#4f4c4d"
+    # def special_sort(self, special_list):
+    #     # Group together substrings and overstrings with smaller substrings going to the left and larger substrings/overstrings going to the right
+    #     # Example:
+    #     # ["from", "tkinter", "import", “print”, “printer”, “print_func”, “print_function”]
+    #     # Keep all else in same order
+    #     # What changed?
+    #     # [“print_function”, “printer”, “print”, “print_func”] Became [“print”, “printer”, “print_func”, “print_function”]
+    #     # It is now sorted by the smallest substring going to the left
+    #     # Create a sorting algorithm that will sort the list in the correct order as shown above
         
-        self.text.ResetColorizer()
-        self.cdg.prog = re.compile(r"\b(?P<MYGROUP>tkinter)\b|" + ic.make_pat(), re.S)
-        self.cdg.idprog = re.compile(r"\s+(\w+)", re.S)
-        with open(folder / "settings.txt", "r") as settings:
-            settings = settings.read()
-        settings = settings.split("\n")
-        tag_mygroup = str(settings[0])
-        tag_comment = str(settings[1])
-        tag_keyword = str(settings[2])
-        tag_builtin = str(settings[3])
-        tag_string = str(settings[4])
-        tag_definition = str(settings[5])
-        tag_class = str(settings[6])
-        #, "background": bg
-        self.cdg.tagdefs["MYGROUP"] = {"foreground": tag_mygroup, "background": bg}
-        self.cdg.tagdefs["COMMENT"] = {"foreground": tag_comment, "background": bg}
-        self.cdg.tagdefs["KEYWORD"] = {"foreground": tag_keyword, "background": bg}
-        self.cdg.tagdefs["BUILTIN"] = {"foreground": tag_builtin, "background": bg}
-        self.cdg.tagdefs["STRING"] = {"foreground": tag_string, "background": bg}
-        self.cdg.tagdefs["DEFINITION"] = {"foreground": tag_definition, "background": bg}
-        self.cdg.tagdefs["CLASS"] = {"foreground": tag_class, "background": bg}
-        ip.Percolator(self.text).insertfilter(self.cdg)
+    #     # Create a list of lists
+    #     # Each list will be a group of substrings and overstrings similar to [“print”, “printer”, “print_func”, “print_function”] and the rest of the list will be in the same order as the original list
+    #     # Example:
+    #     # [[“print”, “printer”, “print_func”, “print_function”], [“from”, “tkinter”, “import”]]
+    #     return special_list
 
     def callback(self, word):
         #Returns possible matches
         #words is a list of almost every keyword and builtin function
-        words = keywords_list
+        words = keywords_list 
+        #+ self.temporary_autocomplete_list
+        #Remove duplicates without changing order
+        # words = list(dict.fromkeys(words))
+        #Sort using special_sort
+        # words = self.special_sort(words)
         matches = [x for x in words if x.startswith(word)]
         return matches
 
@@ -333,6 +327,9 @@ class ultra_text(Frame):
             return "break"
 
     def _autocomplete(self, event):
+        #Get the current line contents
+        # current_line_contents = self.text.get("insert linestart", "insert lineend")
+        # self.parse_line(current_line_contents)
         if event.char and self.callback and event.keysym != "BackSpace":
             word = self.text.get("insert-1c wordstart", "insert-1c wordend")
             matches = self.callback(word)
@@ -341,6 +338,55 @@ class ultra_text(Frame):
                 insert = self.text.index("insert")
                 self.text.insert(insert, remainder, ("sel", "autocomplete"))
                 self.text.mark_set("insert", insert)
+
+    # def parse_text(self):
+    #     lines = self.text.get("1.0", "end")
+    #     lines = lines.split("\n")
+    #     print(lines)
+    #     print(self.temporary_autocomplete_list)
+    #     for line in lines:
+    #         self.parse_line(line)
+    #         # print(self.temporary_autocomplete_list)
+    #     self.callback("")
+    #     print(self.temporary_autocomplete_list)
+
+    # def parse_line(self, line):
+    #     #Parse the line to get variables and functions so they can be added to the temporary_autocomplete_list
+    #     #This is done to avoid autocompleteing variables and functions that are not in other files
+    #     #Get the current line contents
+    #     current_line_contents = line
+    #     current_line_importants = []
+    #     #Check if the current line is a variable or a function or a class or a module or none of the above
+    #     if current_line_contents.startswith("def"):
+    #         #Get the function name
+    #         function_name = current_line_contents.split("(")[0].split("def")[1].strip()
+    #         #Add the function name to the list of important things
+    #         current_line_importants.append(function_name)
+    #     if current_line_contents.startswith("class"):
+    #         #Get the class name
+    #         class_name = current_line_contents.split(":")[0].split("class")[1].strip()
+    #         #Check if the class is a subclass of another class
+    #         if "(" in class_name:
+    #             #Get the superclass name
+    #             superclass_name = class_name.split("(")[0].strip()
+    #             #Add the superclass name to the list of important things
+    #             current_line_importants.append(superclass_name)
+    #         #Add the class name to the list of important things
+    #         current_line_importants.append(class_name)
+    #     if current_line_contents.startswith("import"):
+    #         #Get the module name
+    #         module_name = current_line_contents.split("import")[1].split("\n")[0].strip()
+    #         #Add the module name to the list of important things
+    #         current_line_importants.append(module_name)
+    #     if "=" in current_line_contents:
+    #         #Get the variable name
+    #         variable_name = current_line_contents.split("=")[0].strip()
+    #         #Add the variable name to the list of important things
+    #         current_line_importants.append(variable_name)
+    #     #Add the current line importants to the end of the temporary_autocomplete_list
+    #     self.temporary_autocomplete_list += current_line_importants
+    #     #Remove duplicates from the temporary_autocomplete_list without changing the order
+    #     self.temporary_autocomplete_list = list(dict.fromkeys(self.temporary_autocomplete_list))
 
     def make_find_and_replace(self, x, y, event=None, **kwargs):
         color_mode = kwargs.pop("color_mode")
@@ -521,19 +567,19 @@ class search_text(Frame):
         self.search_button = Button(self.search_text_window, text="Search File", font=("Courier New bold", 15), command=self.find)
         self.text_replace_entry = Entry(self.search_text_window, borderwidth=3, font=("Courier New bold", 15))
         self.replace_button = Button(self.search_text_window, text="Replace", font=("Courier New bold", 15), command=self.find_and_replace)
-        self.skip_match = Button(self.search_text_window, text="Skip Match", font=("Courier New bold", 15), command=self.skip_match)
+        self.replace_all_button = Button(self.search_text_window, text="Replace All", font=("Courier New bold", 15), command=self.replace_all)
         self.search_list = list()
         self.s = ""
         self.text_search_entry.pack(side=LEFT, fill=BOTH, expand=1)
         self.search_button.pack(side=LEFT)
         self.text_replace_entry.pack(side=LEFT, fill=BOTH, expand=1)
         self.replace_button.pack(side=LEFT)
-        self.skip_match.pack(side=LEFT)
+        self.replace_all_button.pack(side=LEFT)
         self.text_search_entry.configure(bg=bg, insertbackground = fg, fg=fg)
         self.text_replace_entry.configure(bg=bg, insertbackground = fg, fg=fg)
         self.search_button.configure(highlightbackground=bg)
         self.replace_button.configure(highlightbackground=bg)
-        self.skip_match.configure(highlightbackground=bg)
+        self.replace_all_button.configure(highlightbackground=bg)
 
     def attach(self, text):
         self.text = text
@@ -573,10 +619,10 @@ class search_text(Frame):
                 showinfo("Search Complete","Search Completed\n\nThere Are No Further Matches")
                 self.search_list.clear()
                 self.text.tag_remove(SEL, 1.0,"end-1c")
-    def skip_match(self):
-        self.find()
+
     def find_and_replace(self):
         #Replaces the match in the text box with the text in the replace box
+        self.find()
         self.reset_list()
         self.text.focus_set()
         self.s = self.text_search_entry.get()
@@ -603,6 +649,14 @@ class search_text(Frame):
             self.text.focus_set()
             self.text.mark_set("insert", "insert linestart")
             self.reset_list()
+
+    def replace_all(self):
+        #Replaces all matches in the text box with the text in the replace box
+        self.s = self.text_search_entry.get()
+        self.r = self.text_replace_entry.get()
+        contents = self.text.get("1.0", END)
+        for i in range(contents.count(self.s)):
+            self.find_and_replace()
 
 class temp_name_pop_up:
     def __init__(self, text_info, **kwargs):
@@ -640,18 +694,15 @@ class temp_name_pop_up:
         temp_name = self.pop_up_name_entry.get()
         if (folder / "{}.py".format(temp_name)).exists():
             showinfo("Template Name Error", "Template Name Already Exists")
-            self.pop_up_window.destroy()
         else:
             if (temp_name != "") and (temp_name != " "):
                 with open(folder / "{}.py".format(temp_name), "w") as f:
                     f.write(self.text_info)
                     f.close()
+                showinfo("Template Created", "Template Created\n\nTemplate Has Been Created")
                 self.pop_up_window.destroy()
-                showinfo("Template Created", "Template Created\n\nTemplate has been created")
             else:
-                showerror("Template Name Error", "Template Name Cannot be Blank")
-                self.pop_up_window.destroy()
-
+                showerror("Template Name Error", "A Template Naming Error Has Occurred\n\nTemplate Name Cannot be Blank")
     def cancel(self):
         global temp_name
         temp_name = None
@@ -706,10 +757,18 @@ class temp_open_pop_up(Frame):
 
     def export_template(self):
         self.file_chosen = self.temp_open_pop_up_listbox.get(ANCHOR) + ".py"
+        self.contents = text.get(1.0, END)
         if self.file_chosen != ".py":
-            asksaveasfile(initialfile=self.file_chosen, defaultextension=".py", filetypes=[("Python Files", "*.py")], initialdir="/")
+            file_path = asksaveasfile(initialfile=self.file_chosen, defaultextension=".py", filetypes=[("Python Files", "*.py")], initialdir="/")
+            if file_path is not None:
+                with open(file_path, "w") as f:
+                    f.write(self.contents)
+                    f.close()
+                showinfo("Template Exported", "Template Exported")
+            else:
+                showerror("Template Export Error", "Template Export Could Not Be Completed\n\nNo Path Was Chosen")
         else:
-            showinfo("Export Error", "No Template Selected\n\nPlease Select A Template To Export")
+            showerror("Export Error", "No Template Selected\n\nPlease Select A Template To Export")
 
     def attach(self, text):
         self.text = text
@@ -772,11 +831,10 @@ class temp_destroy_pop_up:
         self.file_chosen = self.temp_destroy_pop_up_listbox.get(ANCHOR) + ".py"
         if self.file_chosen != ".py":
             os.remove(folder / self.file_chosen)
-            self.temp_destroy_pop_up_window.destroy()
             showinfo("Template Deleted", "Template Deleted\n\nTemplate Has Been Beleted")
+            self.temp_destroy_pop_up_window.destroy()
         else:
             showerror("Template Error", "Template Could Not Be Deleted\n\nNo Template Selected")
-            self.temp_destroy_pop_up_window.destroy()
 
     def cancel(self):
         self.temp_destroy_pop_up_window.destroy()

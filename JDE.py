@@ -82,7 +82,7 @@ def open_file(event=None):
     file_contents = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes)
     window.focus_force()
     if file_contents == "":
-        pass
+        showerror("File Opening Error", "An Error Occurred While Opening File\n\nNo File Was Selected") 
     else:
         main_text_box = ultra_text(window, window=window, color_mode = color_mode)
         text_boxes.append(main_text_box)
@@ -99,9 +99,13 @@ def open_file(event=None):
         text_boxes[current_focus].delete(1.0, END)
         actual_contents = (open(file_contents, "r")).read()
         text_boxes[current_focus].insert(1.0, actual_contents)
-        #Delete last line
-        # if text_boxes[current_focus].text.get("end-1l") == "" or " " or "\n":
+        #Check if last line is empty or a newline
+        # last_line = text_boxes[current_focus].get("end-1l", END)
+        # if last_line == "\n" or last_line == "":
+        #     #Remove last line
         #     text_boxes[current_focus].delete("end-1l", END)
+        #Parse_text
+        # text_boxes[current_focus].parse_text()
         text_boxes[current_focus].text.focus()
         the_terminal.clear()
         the_terminal.run_command("cd {}".format(str(Path(file_contents).parent)))
@@ -180,7 +184,7 @@ def copy_contents():
 copy_img = PhotoImage(file=(folder / "copy.png"))
 copy_button = Button(commands_sidebar, image=copy_img, font=("Courier New bold", 20), command=copy_contents, width=25, highlightbackground="#4e524f") 
 copy_button.place(relx=.5, rely=.275, anchor=CENTER)
-ToolTip(copy_button, text="Copy Contents Of File", window=window)
+ToolTip(copy_button, text="Copy Contents of File", window=window)
 def paste_contents():
     current_focus = main_notebook.index("current")
     text_boxes[current_focus].insert(INSERT, paste())
@@ -196,7 +200,7 @@ def clear_contents():
 clear_img = PhotoImage(file=(folder / "clear_text.png"))
 clear_button = Button(commands_sidebar, image=clear_img, font=("Courier New bold", 20), command=clear_contents, width=25, highlightbackground="#4e524f")
 clear_button.place(relx=.5, rely=.385, anchor=CENTER)
-ToolTip(clear_button, text="Clear Contents Of File", window=window)
+ToolTip(clear_button, text="Clear Contents of File", window=window)
 def clear_terminal():
     the_terminal.clear()
 clear_terminal_img = PhotoImage(file=(folder / "clear_terminal.png"))
@@ -240,46 +244,61 @@ def redraw_all(event=None):
         text_boxes[i].redraw()
 window.bind("<Button-1>", redraw_all)
 def reset_syntax_colors(event=None):
-    global text_boxes
-    global path_list
-    current_focus = main_notebook.index("current")
-    #Get all info from the tabs
-    yviews = []
-    xviews = []
-    text_names = []
-    content = []
-    paths = []
-    for i in range(len(text_boxes)):
-        yviews.append(text_boxes[i].text.yview())
-        xviews.append(text_boxes[i].text.xview())
-        #get name of i in notebook
-        text_names.append(main_notebook.tab(i, "text"))
-        content.append(text_boxes[i].text.get(1.0, END))
-        #if last line of content is empty, remove it
-        if content[i][-1] == "\n":
-            content[i] = content[i][:-1]
-        paths.append((path_list[i]))
-    for i in range(len(text_boxes)):
-        path_list[i] = paths[i]
-    #destroy all text boxes
-    for i in range(len(text_boxes)):
-        main_notebook.forget(len(text_boxes)-i-1)
-    text_boxes = []
-    for i in range(len(content)):
-        text_boxes.append(ultra_text(main_notebook, window=window, color_mode = color_mode))
-        main_notebook.add(text_boxes[i], text=text_names[i])
-        text_boxes[i].text.insert(INSERT, content[i])
-        text_boxes[i].redraw()
-        text_boxes[i].text.yview(MOVETO, yviews[i][0])
-        text_boxes[i].text.xview(MOVETO, xviews[i][1])
-    #Set the current tab to current_focus
-    main_notebook.select(current_focus)
-    #Redraw current tab
-    window.after(150, text_boxes[current_focus].redraw)
+    reset_continue = askyesno("This Feature is Experimental", "This Feature is Experimental. Because of This, We Cannot Ensure That This Feature Will Work Properly.\n\nAre You Sure You Want To Reset Syntax Colors?")
+    if reset_continue:
+        global text_boxes
+        global path_list
+        current_focus = main_notebook.index("current")
+        #Get all info from the tabs
+        yviews = []
+        xviews = []
+        text_names = []
+        content = []
+        paths = []
+        mark_sets = []
+        # temp_autocompletes = []
+        for i in range(len(text_boxes)):
+            yviews.append(text_boxes[i].text.yview())
+            xviews.append(text_boxes[i].text.xview())
+            #get name of i in notebook
+            text_names.append(main_notebook.tab(i, "text"))
+            content.append(text_boxes[i].text.get(1.0, END))
+            #if last line of content is empty, remove it
+            if content[i][-1] == "\n":
+                content[i] = content[i][:-1]
+            paths.append((path_list[i]))
+            mark_sets.append(text_boxes[i].index(INSERT))
+            # temp_autocompletes.append(text_boxes[i].temporary_autocomplete_list)
+        for i in range(len(text_boxes)):
+            path_list[i] = paths[i]
+        #destroy all text boxes
+        for i in range(len(text_boxes)):
+            main_notebook.forget(len(text_boxes)-i-1)
+        text_boxes = []
+        for i in range(len(content)):
+            text_boxes.append(ultra_text(main_notebook, window=window, color_mode = color_mode))
+            main_notebook.add(text_boxes[i], text=text_names[i])
+            text_boxes[i].text.insert(INSERT, content[i])
+            text_boxes[i].redraw()
+            text_boxes[i].text.yview(MOVETO, yviews[i][0])
+            text_boxes[i].text.xview(MOVETO, xviews[i][1])
+            text_boxes[i].text.focus_set()
+            text_boxes[i].text.mark_set(INSERT, mark_sets[i])
+            # text_boxes[i].temporary_autocomplete_list = temp_autocompletes[i]
+        #Set the current tab to current_focus
+        main_notebook.select(current_focus)
+        text_boxes[current_focus].text.focus_set()
+        #Redraw current tab
+        window.after(150, text_boxes[current_focus].redraw)
+        text_boxes[current_focus].text.mark_set(INSERT, mark_sets[current_focus])
+        return "Reset"
+    else:
+        showinfo("Syntax Reset Cancelled", "Syntax Reset Cancelled\n\nYou Have Canceled The Syntax Highlighting Reset")
+        return "Cancelled"
 reset_img = PhotoImage(file=(folder / "reset.png"))
 reset_syntax_button = Button(commands_sidebar, image=reset_img, font=("Courier New bold", 20), command=reset_syntax_colors, width=25, highlightbackground="#4e524f")
 reset_syntax_button.place(relx=.5, rely=.715, anchor=CENTER)
-ToolTip(reset_syntax_button, text="Reset Syntax", window=window)
+ToolTip(reset_syntax_button, text="Reset Syntax Highlighting", window=window)
 def change_color_mode(event=None):
     global color_mode
     if color_mode == "Dark":
@@ -290,20 +309,23 @@ def change_color_mode(event=None):
         color_mode = "Dark"
         bg = "#4f4c4d"
         fg = "white"
-    for i in range(len(text_boxes)):
-        text_boxes[i].configure(bg=bg)
-        text_boxes[i].change_color("{}".format(color_mode))
-    with open(folder / "settings.txt", "r+") as file:
-        info = file.read().split("\n")
-        info[7] = color_mode
-        file.truncate()
-        file.seek(0)
-        file.truncate()
-        file.seek(0)
-        file.write("\n".join(info))
-    window.configure(bg=bg)
-    main_label.configure(bg=bg, fg=fg)
-    the_terminal.configure(bg=bg, fg=fg, insertbackground=fg)
+    showinfo("Color Mode Change Requires Syntax Highlighting Reset", "Color Mode Change Requires Syntax Highlighting Reset\n\nYou Must Reset Syntax Highlighting To See The Changes. Because of This, You Will Be Prompted To Do So")
+    cancelled_or_go = reset_syntax_colors()
+    if cancelled_or_go == "Reset":
+        for i in range(len(text_boxes)):
+            text_boxes[i].configure(bg=bg)
+            text_boxes[i].change_color("{}".format(color_mode))
+        with open(folder / "settings.txt", "r+") as file:
+            info = file.read().split("\n")
+            info[7] = color_mode
+            file.truncate()
+            file.seek(0)
+            file.truncate()
+            file.seek(0)
+            file.write("\n".join(info))
+        window.configure(bg=bg)
+        main_label.configure(bg=bg, fg=fg)
+        the_terminal.configure(bg=bg, fg=fg, insertbackground=fg)
 color_mode_img = PhotoImage(file=(folder / "color_mode.png"))
 change_color_mode_button = Button(commands_sidebar, image=color_mode_img, font=("Courier New bold", 20), command=change_color_mode, width=25, highlightbackground="#4e524f")
 change_color_mode_button.place(relx=.5, rely=.77, anchor=CENTER)
