@@ -13,13 +13,15 @@ def get_extension_details(file_path):
     return (extension_type, extension_permissions, extension_name, extension_description, extension_author, extension_code)
 
 def parse_extension_code(extension_code, extension_permissions):
-    #Code is split into blocks formated with <keywords></keywords>, <settings></settings>, <color_theme></color_theme>
+    #Code is split into blocks formated with <keywords></keywords>, <settings></settings>, <color_theme></color_theme> <font></font>
     #<keywords>
     #</keywords>
     #<settings>
     #</settings>
     #<color_theme>
     #</color_theme>
+    #<font>
+    #</font>
     #Turn extension code into a string
     extension_code = "".join(extension_code)
     #Split the string into individual lines
@@ -46,7 +48,13 @@ def parse_extension_code(extension_code, extension_permissions):
         return_tuple += (color_theme,)
     else:
         return_tuple += (None,)
-
+    if "font" in extension_permissions:
+        font_start = extension_code.index("<font>")
+        font_end = extension_code.index("</font>")
+        font = extension_code[font_start+1:font_end]
+        return_tuple += (font,)
+    else:
+        return_tuple += (None,)
     return return_tuple
 
 def open_extension(file_path):
@@ -61,4 +69,8 @@ def open_extension(file_path):
     keywords = extension_code[0]
     settings = extension_code[1]
     color_theme = extension_code[2]
-    return (extension_type, extension_permissions, extension_name, extension_description, extension_author, keywords, settings, color_theme)
+    font = extension_code[3]
+    return (extension_type, extension_permissions, extension_name, extension_description, extension_author, keywords, settings, color_theme, font)
+
+if __name__ == "__main__":
+    open_extension("extensions/Default.xt")

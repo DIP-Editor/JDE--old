@@ -92,3 +92,16 @@
 # zoom_scale.set(10)
 
 # root.mainloop()
+from tkinter import *
+
+def add_image():
+    text.image_create(1.0, image = img, justify=CENTER) # Example 1
+
+root = Tk()
+
+text = Text(root)
+text.pack(padx = 20, pady = 20)
+
+Button(root, text = "Insert", command = add_image).pack()
+img = PhotoImage(file = "extensions.png")
+root.mainloop()

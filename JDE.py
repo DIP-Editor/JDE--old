@@ -1,5 +1,4 @@
 #Use pytest
-import platform
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import filedialog
@@ -22,6 +21,15 @@ light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
 dark_mode_style = theme_style[1].split(";")
 dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
 dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
+#Get Font from file
+font_style = open("font.txt", "r").readlines()
+font_name = font_style[0].split("\n")[0]
+normal_size = int(font_style[1].split("\n")[0])
+medium_size = int(font_style[2].split("\n")[0])
+large_size = int(font_style[3].split("\n")[0])
+normal_font = (font_name, normal_size)
+medium_font = (font_name, medium_size)
+large_font = (font_name, large_size)
 path_list = []
 have_syntax_list = []
 window = Tk()
@@ -65,7 +73,7 @@ s.theme_use("clam")
 def about():
     showinfo("JDE", "JDE is an IDE for Python\n\nCreated by: Joshua R. Yacktman\nBeta Version: {}".format(current_version))
 window.title("Josh's Development Environment")
-main_label = Label(window, text="Josh's Development Environment", font=("Courier New bold", 35))
+main_label = Label(window, text="Josh's Development Environment", font=large_font)
 main_label.place(relx=0.525, y=30, anchor=CENTER)
 main_notebook = Notebook(window)
 main_notebook.place(relx=.525, rely=.4, anchor=CENTER)
@@ -78,7 +86,7 @@ main_notebook.add(main_text_box)
 current_focus = main_notebook.index("current")
 main_notebook.tab(text_boxes[current_focus], text="Untitled.py")
 main_text_box.text.focus()
-the_terminal = Terminal(window, font=("Courier New bold", 15), relief=SUNKEN, borderwidth=5, width=102, height=9)
+the_terminal = Terminal(window, font=normal_font, relief=SUNKEN, borderwidth=5, width=102, height=9)
 the_terminal.place(relx=.525, rely=.865, anchor=CENTER)
 the_terminal.shell = True
 the_terminal.basename = "JDE: "
@@ -126,7 +134,7 @@ def open_file(event=None):
         the_terminal.run_command("cd {}".format(str(Path(file_contents).parent)))
         window.after(200, text_boxes[current_focus].redraw)
 open_img = PhotoImage(file=str(folder / "open.png"))
-open_button = Button(commands_sidebar, image=open_img, font=("Courier New bold", 20), command=open_file, width=25, highlightbackground="#4e524f")
+open_button = Button(commands_sidebar, image=open_img, font=medium_font, command=open_file, width=25, highlightbackground="#4e524f")
 open_button.place(relx=.5, rely=.1052, anchor=CENTER)
 ToolTip(open_button, text="Open File", window=window)
 window.bind("<Command-o>", open_file)
@@ -168,7 +176,7 @@ def save_file(event=None):
         contents = text_boxes[current_focus].get(1.0, END)
         open(path, "r+").write(contents)
 save_img = PhotoImage(file=str(folder / "save.png"))
-save_button = Button(commands_sidebar, image=save_img, font=("Courier New bold", 20), command=save_file, width=25, highlightbackground="#4e524f")
+save_button = Button(commands_sidebar, image=save_img, font=medium_font, command=save_file, width=25, highlightbackground="#4e524f")
 save_button.place(relx=.5, rely=.1578, anchor=CENTER)
 ToolTip(save_button, text="Save", window=window)
 window.bind("<Command-s>", save_file)
@@ -190,7 +198,7 @@ def save_as_file():
         the_terminal.run_command("cd {}".format(str(Path(new_path).parent)))
         main_notebook.tab(text_boxes[current_focus], text="{}".format(new_path.split("/")[-1]))
 save_as_img = PhotoImage(file=(folder / "save_as.png"))
-save_as_button = Button(commands_sidebar, image=save_as_img, font=("Courier New bold", 20), command=save_as_file, width=25, highlightbackground="#4e524f")
+save_as_button = Button(commands_sidebar, image=save_as_img, font=medium_font, command=save_as_file, width=25, highlightbackground="#4e524f")
 save_as_button.place(relx=.5, rely=.2104, anchor=CENTER)
 ToolTip(save_as_button, text="Save As", window=window)
 def copy_contents():
@@ -198,7 +206,7 @@ def copy_contents():
     contents = text_boxes[current_focus].get(1.0, END)
     copy(contents)
 copy_img = PhotoImage(file=(folder / "copy.png"))
-copy_button = Button(commands_sidebar, image=copy_img, font=("Courier New bold", 20), command=copy_contents, width=25, highlightbackground="#4e524f") 
+copy_button = Button(commands_sidebar, image=copy_img, font=medium_font, command=copy_contents, width=25, highlightbackground="#4e524f") 
 copy_button.place(relx=.5, rely=.263, anchor=CENTER)
 ToolTip(copy_button, text="Copy Contents of File", window=window)
 def paste_contents():
@@ -206,7 +214,7 @@ def paste_contents():
     text_boxes[current_focus].insert(INSERT, paste())
     text_boxes[current_focus].redraw()
 paste_img = PhotoImage(file=(folder / "paste.png"))
-paste_button = Button(commands_sidebar, image=paste_img, font=("Courier New bold", 20), command=paste_contents, width=25, highlightbackground="#4e524f")
+paste_button = Button(commands_sidebar, image=paste_img, font=medium_font, command=paste_contents, width=25, highlightbackground="#4e524f")
 paste_button.place(relx=.5, rely=.3156, anchor=CENTER)
 ToolTip(paste_button, text="Paste Clipboard Into File", window=window)
 def clear_contents():
@@ -214,40 +222,40 @@ def clear_contents():
     text_boxes[current_focus].delete(1.0, END)
     text_boxes[current_focus].redraw()
 clear_img = PhotoImage(file=(folder / "clear_text.png"))
-clear_button = Button(commands_sidebar, image=clear_img, font=("Courier New bold", 20), command=clear_contents, width=25, highlightbackground="#4e524f")
+clear_button = Button(commands_sidebar, image=clear_img, font=medium_font, command=clear_contents, width=25, highlightbackground="#4e524f")
 clear_button.place(relx=.5, rely=.3682, anchor=CENTER)
 ToolTip(clear_button, text="Clear Contents of File", window=window)
 def clear_terminal():
     the_terminal.clear()
 clear_terminal_img = PhotoImage(file=(folder / "clear_terminal.png"))
-clear_terminal_button = Button(commands_sidebar, image=clear_terminal_img, font=("Courier New bold", 20), command=clear_terminal, width=25, highlightbackground="#4e524f")
+clear_terminal_button = Button(commands_sidebar, image=clear_terminal_img, font=medium_font, command=clear_terminal, width=25, highlightbackground="#4e524f")
 clear_terminal_button.place(relx=.5, rely=.4208, anchor=CENTER)
 ToolTip(clear_terminal_button, text="Clear Terminal", window=window)
 def create_template():
     current_focus = main_notebook.index("current")
     temp_name_pop_up(text_boxes[current_focus], x=window.winfo_x(), y=window.winfo_y(), color_mode = color_mode)
 create_template_img = PhotoImage(file=(folder / "create_template.png"))
-create_template_button = Button(commands_sidebar, image=create_template_img, font=("Courier New bold", 20), command=create_template, width=25, highlightbackground="#4e524f")
+create_template_button = Button(commands_sidebar, image=create_template_img, font=medium_font, command=create_template, width=25, highlightbackground="#4e524f")
 create_template_button.place(relx=.5, rely=.4734, anchor=CENTER)
 ToolTip(create_template_button, text="Create Template", window=window)
 def open_template():
     current_focus = main_notebook.index("current")
     text_boxes[current_focus].open_template(window.winfo_x(), window.winfo_y(), color_mode = color_mode)
 open_template_img = PhotoImage(file=(folder / "open_template.png"))
-open_template_button = Button(commands_sidebar, image=open_template_img, font=("Courier New bold", 20), command=open_template, width=25, highlightbackground="#4e524f")
+open_template_button = Button(commands_sidebar, image=open_template_img, font=medium_font, command=open_template, width=25, highlightbackground="#4e524f")
 open_template_button.place(relx=.5, rely=.526, anchor=CENTER)
 ToolTip(open_template_button, text="Open Template", window=window)
 def delete_template():
     temp_destroy_pop_up(color_mode = color_mode, x=window.winfo_x(), y=window.winfo_y())
 delete_template_img = PhotoImage(file=(folder / "delete_template.png"))
-delete_template_button = Button(commands_sidebar, image=delete_template_img, font=("Courier New bold", 20), command=delete_template, width=25, highlightbackground="#4e524f")
+delete_template_button = Button(commands_sidebar, image=delete_template_img, font=medium_font, command=delete_template, width=25, highlightbackground="#4e524f")
 delete_template_button.place(relx=.5, rely=.5786, anchor=CENTER)
 ToolTip(delete_template_button, text="Delete Template", window=window)
 def find_replace(event=None):
     current_focus = main_notebook.index("current")
     text_boxes[current_focus].make_find_and_replace(window.winfo_x(), window.winfo_y(), color_mode = color_mode)
 find_replace_img = PhotoImage(file=(folder / "find_and_replace.png"))
-find_replace_button = Button(commands_sidebar, image=find_replace_img, font=("Courier New bold", 20), command=find_replace, width=25, highlightbackground="#4e524f")
+find_replace_button = Button(commands_sidebar, image=find_replace_img, font=medium_font, command=find_replace, width=25, highlightbackground="#4e524f")
 find_replace_button.place(relx=.5, rely=.6312, anchor=CENTER)
 ToolTip(find_replace_button, text="Find and Replace", window=window)
 window.bind("<Command-f>", find_replace)
@@ -310,7 +318,7 @@ def reset_syntax_colors(event=None):
     text_boxes[current_focus].text.mark_set(INSERT, mark_sets[current_focus])
     return "Reset"
 reset_img = PhotoImage(file=(folder / "reset.png"))
-reset_syntax_button = Button(commands_sidebar, image=reset_img, font=("Courier New bold", 20), command=reset_syntax_colors, width=25, highlightbackground="#4e524f")
+reset_syntax_button = Button(commands_sidebar, image=reset_img, font=medium_font, command=reset_syntax_colors, width=25, highlightbackground="#4e524f")
 reset_syntax_button.place(relx=.5, rely=.6838, anchor=CENTER)
 ToolTip(reset_syntax_button, text="Reset Syntax Highlighting", window=window)
 def change_color_mode(event=None):
@@ -339,7 +347,7 @@ def change_color_mode(event=None):
     main_label.configure(bg=bg, fg=fg)
     the_terminal.configure(bg=bg, fg=fg, insertbackground=fg)
 color_mode_img = PhotoImage(file=(folder / "color_mode.png"))
-change_color_mode_button = Button(commands_sidebar, image=color_mode_img, font=("Courier New bold", 20), command=change_color_mode, width=25, highlightbackground="#4e524f")
+change_color_mode_button = Button(commands_sidebar, image=color_mode_img, font=medium_font, command=change_color_mode, width=25, highlightbackground="#4e524f")
 change_color_mode_button.place(relx=.5, rely=.7364, anchor=CENTER)
 ToolTip(change_color_mode_button, text="Change Color Mode", window=window)
 def show_extension(extension_name):
@@ -361,17 +369,19 @@ def show_extension(extension_name):
     keywords = details[5]
     the_settings = details[6]
     the_theme = details[7]
-    text_boxes[current_focus].insert(1.0, "Extension Name: {}\nExtension Type: {}\nExtension Accesses: {}\nExtension Description: {}\nExtension Author: {}\nExtension Keywords: {}\n\nExtension Settings: {}\n\nExtension Theme: {}".format(name, type, accesses, description, author, keywords, the_settings, the_theme))
+    the_font = details[8]
+    text_boxes[current_focus].insert(1.0, "\n\nExtension Name: {}\nExtension Type: {}\nExtension Accesses: {}\nExtension Description: {}\nExtension Author: {}\nExtension Keywords: {}\n\nExtension Settings: {}\n\nExtension Theme: {}\n\nExtension Font: {}".format(name, type, accesses, description, author, keywords, the_settings, the_theme, the_font))
+    text_boxes[current_focus].text.image_create(1.0, image=show_extension_img)
     text_boxes[current_focus].redraw()
-    text_boxes[current_focus].text.focus()
+    text_boxes[current_focus].text.configure(state=DISABLED)
 show_extension_img = PhotoImage(file=(folder / "extensions.png"))
-show_extension_button = Button(commands_sidebar, image=show_extension_img, font=("Courier New bold", 20), command= lambda: extension_page(window, color_mode="light", x=window.winfo_x(), y=window.winfo_y(), function=show_extension), width=25, highlightbackground="#4e524f")
+show_extension_button = Button(commands_sidebar, image=show_extension_img, font=medium_font, command= lambda: extension_page(window, color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), function=show_extension, change_color=change_color_mode), width=25, highlightbackground="#4e524f")
 show_extension_button.place(relx=.5, rely=.789, anchor=CENTER)
 ToolTip(show_extension_button, text="Open Extensions", window=window)
 def report_a_bug(event=None):
     report_bug(color_mode = color_mode, x=window.winfo_x(), y=window.winfo_y())
 report_bug_img = PhotoImage(file=(folder / "report_bug.png"))
-report_a_bug_button = Button(commands_sidebar, image=report_bug_img, font=("Courier New bold", 20), command=report_a_bug, width=25, highlightbackground="#4e524f")
+report_a_bug_button = Button(commands_sidebar, image=report_bug_img, font=medium_font, command=report_a_bug, width=25, highlightbackground="#4e524f")
 report_a_bug_button.place(relx=.5, rely=.8416, anchor=CENTER)
 ToolTip(report_a_bug_button, text="Report A Bug", window=window)
 def run_file(event=None):
@@ -396,7 +406,7 @@ def run_file(event=None):
                 the_terminal.run_command("python3 {}".format(path))
             else:
                 showerror("Runtime Error", "Runtime Error\n\nFile Type Incompatible. File Could Not Be Run")
-run_button = Button(commands_sidebar, image=run_img, font=("Courier New bold", 25), command=run_file, width=25, height=25, highlightbackground="#4e524f")
+run_button = Button(commands_sidebar, image=run_img, font=medium_font, command=run_file, width=25, height=25, highlightbackground="#4e524f")
 run_button.place(relx=.5, rely=.0526, anchor=CENTER)
 run_button.configure(highlightbackground="#4e524f")
 ToolTip(run_button, text="Runs File", window=window)
@@ -406,11 +416,11 @@ def window_destroy(event=None):
     window.destroy()
 window.bind("<Command-w>", close_tab)
 settings_img = PhotoImage(file=(folder / "settings.png"))
-settings_button = Button(commands_sidebar, image=settings_img, font=("Courier New bold", 20), command= lambda: settings(color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), window=window), width=25, highlightbackground="#4e524f")
+settings_button = Button(commands_sidebar, image=settings_img, font=medium_font, command= lambda: settings(color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), window=window), width=25, highlightbackground="#4e524f")
 settings_button.place(relx=.5, rely=.8942, anchor=CENTER)
 ToolTip(settings_button, text="Settings", window=window)
 quit_img = PhotoImage(file=(folder / "quit.png"))
-quit_button = Button(commands_sidebar, image=quit_img, font=("Courier New bold", 15), width=25, highlightbackground="#4e524f", command=window_destroy)
+quit_button = Button(commands_sidebar, image=quit_img, font=normal_font, width=25, highlightbackground="#4e524f", command=window_destroy)
 quit_button.place(relx=.5, rely=.9468, anchor=CENTER)
 ToolTip(quit_button, text="Quit", window=window)
 menubar = Menu(window)
