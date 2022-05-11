@@ -23,6 +23,7 @@ dark_mode_style = theme_style[1].split(";")
 dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
 dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
 path_list = []
+have_syntax_list = []
 window = Tk()
 current_version = "0.0.7"
 try:
@@ -69,7 +70,8 @@ main_label.place(relx=0.525, y=30, anchor=CENTER)
 main_notebook = Notebook(window)
 main_notebook.place(relx=.525, rely=.4, anchor=CENTER)
 text_boxes = []
-main_text_box = ultra_text(window, window=window, color_mode = color_mode)
+main_text_box = ultra_text(window, window=window, color_mode = color_mode, have_syntax=True)
+have_syntax_list.append(True)
 text_boxes.append(main_text_box)
 path_list.append("")
 main_notebook.add(main_text_box)
@@ -91,7 +93,13 @@ def open_file(event=None):
     if file_contents == "":
         showerror("File Opening Error", "An Error Occurred While Opening File\n\nNo File Was Selected") 
     else:
-        main_text_box = ultra_text(window, window=window, color_mode = color_mode)
+        #Check if file is a txt file
+        if file_contents.split(".")[-1] == "txt":
+            have_syntax = False
+        else:
+            have_syntax = True
+        main_text_box = ultra_text(window, window=window, color_mode = color_mode, have_syntax=have_syntax)
+        have_syntax_list.append(have_syntax)
         text_boxes.append(main_text_box)
         path_list.append(file_contents)
         main_notebook.add(main_text_box)
@@ -122,8 +130,9 @@ open_button = Button(commands_sidebar, image=open_img, font=("Courier New bold",
 open_button.place(relx=.5, rely=.1052, anchor=CENTER)
 ToolTip(open_button, text="Open File", window=window)
 window.bind("<Command-o>", open_file)
-def create_new_tab(event=None):
-    main_text_box = ultra_text(window, window=window, color_mode = color_mode)
+def create_new_tab(event=None, have_syntax=True):
+    main_text_box = ultra_text(window, window=window, color_mode = color_mode, have_syntax=have_syntax)
+    have_syntax_list.append(have_syntax)
     text_boxes.append(main_text_box)
     path_list.append("")
     main_notebook.add(main_text_box)
@@ -281,14 +290,17 @@ def reset_syntax_colors(event=None):
         main_notebook.forget(len(text_boxes)-i-1)
     text_boxes = []
     for i in range(len(content)):
-        text_boxes.append(ultra_text(main_notebook, window=window, color_mode = color_mode))
+        text_boxes.append(ultra_text(main_notebook, window=window, color_mode = color_mode, have_syntax=have_syntax_list[i]))
         main_notebook.add(text_boxes[i], text=text_names[i])
         text_boxes[i].text.insert(INSERT, content[i])
         text_boxes[i].redraw()
         text_boxes[i].text.yview(MOVETO, yviews[i][0])
-        text_boxes[i].text.xview(MOVETO, xviews[i][1])
+        text_boxes[i].text.xview(MOVETO, xviews[i][0])
         text_boxes[i].text.focus_set()
         text_boxes[i].text.mark_set(INSERT, mark_sets[i])
+    for i in range(len(text_boxes)):
+        text_boxes[i].configure(bg=bg)
+        text_boxes[i].change_color("{}".format(color_mode))
         # text_boxes[i].temporary_autocomplete_list = temp_autocompletes[i]
     #Set the current tab to current_focus
     main_notebook.select(current_focus)
@@ -335,7 +347,7 @@ def show_extension(extension_name):
     extension_name = (folder / "extensions/{}.xt".format(extension_name))
     extension_path = str(folder / extension_name)
     details = open_extension(extension_path)
-    create_new_tab()
+    create_new_tab(have_syntax=False)
     current_focus = main_notebook.index("current")
     main_notebook.tab(text_boxes[current_focus], text="{}".format("Extension: {}".format(base_name)))
     #Remove everything from the text box

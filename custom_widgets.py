@@ -61,7 +61,8 @@ class ToolTip(Frame):
 
 class ultra_text(Frame):
     def __init__(self, *args, **kwargs):
-        self.window = kwargs.pop("window", None)
+        self.have_syntax = kwargs.pop("have_syntax")
+        self.window = kwargs.pop("window")
         self.color_mode = kwargs.pop("color_mode")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
@@ -97,7 +98,8 @@ class ultra_text(Frame):
         else:
             #, width=130, height=29
             self.text = Text(self, font=("Courier New bold", 15), wrap="none", undo=True, borderwidth=2, relief=RIDGE, width=95, height=25)
-        ip.Percolator(self.text).insertfilter(self.cdg)
+        if self.have_syntax == True:
+            ip.Percolator(self.text).insertfilter(self.cdg)
 
         self.scrollbar = Scrollbar(self, orient=VERTICAL, command=self.text.yview)
         self.text.configure(yscrollcommand=self.scrollbar.set)
