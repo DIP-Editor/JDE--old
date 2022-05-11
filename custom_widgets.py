@@ -761,7 +761,7 @@ class temp_name_pop_up:
                 showinfo("Template Created", "Template Created\n\nTemplate Has Been Created")
                 self.pop_up_window.destroy()
             else:
-                showerror("Template Name Error", "A Template Naming Error Has Occurred\n\nTemplate Name Cannot be Blank")
+                showwarning("Template Name Error", "A Template Naming Error Has Occurred\n\nTemplate Name Cannot be Blank")
     def cancel(self):
         #Cancel the template creation
         global temp_name
@@ -832,9 +832,9 @@ class temp_open_pop_up(Frame):
                     f.close()
                 showinfo("Template Exported", "Template Exported")
             else:
-                showerror("Template Export Error", "Template Export Could Not Be Completed\n\nNo Path Was Chosen")
+                showwarning("Template Export Error", "Template Export Could Not Be Completed\n\nNo Path Was Chosen")
         else:
-            showerror("Export Error", "No Template Selected\n\nPlease Select A Template To Export")
+            showwarning("Export Error", "No Template Selected\n\nPlease Select A Template To Export")
 
     def attach(self, text):
         #Attach the text to the template
@@ -850,7 +850,7 @@ class temp_open_pop_up(Frame):
                 f.close()
             self.temp_open_pop_up_window.destroy()
         else:
-            showerror("Template Error", "Template Could Not Be Opened\n\nNo Template Selected")
+            showwarning("Template Error", "Template Could Not Be Opened\n\nNo Template Selected")
             self.temp_open_pop_up_window.destroy()
 
     def cancel(self):
@@ -907,7 +907,7 @@ class temp_destroy_pop_up:
             showinfo("Template Deleted", "Template Deleted\n\nTemplate Has Been Beleted")
             self.temp_destroy_pop_up_window.destroy()
         else:
-            showerror("Template Error", "Template Could Not Be Deleted\n\nNo Template Selected")
+            showwarning("Template Error", "Template Could Not Be Deleted\n\nNo Template Selected")
 
     def cancel(self):
         #Cancel the template selection
@@ -1282,9 +1282,9 @@ class keyword_change_page(Frame):
                 self.keyword_listbox.insert(END, self.add_entry.get())
                 self.add_entry.delete(0, END)
             else:
-                showerror("Error Found", "Keyword Insertion Error\n\nNo Spaces Allowed in Keyword")
+                showwarning("Error Found", "Keyword Insertion Error\n\nNo Spaces Allowed in Keyword")
         else:
-            showerror("Error Found", "Keyword Insertion Error\n\nPlease Enter A Keyword")
+            showwarning("Error Found", "Keyword Insertion Error\n\nPlease Enter A Keyword")
 
     def remove(self):
         #Remove the item from the list
@@ -1362,6 +1362,7 @@ class keyword_change_page(Frame):
 class extension_page(Frame):
     def __init__(self, *args, **kwargs):
         #Retrieve the arguments
+        self.text_boxes = kwargs.pop("text_boxes")
         self.function = kwargs.pop("function")
         self.change_color = kwargs.pop("change_color")
         self.color_mode = kwargs.pop("color_mode")
@@ -1383,41 +1384,46 @@ class extension_page(Frame):
         self.extension_page_window.title("Extensions")
         self.extensions_list = []
         #get extensions from extensions folder
-        for file in os.listdir(folder / "extensions"):
-            if file.endswith(".xt"):
-                self.extensions_list.append(str(file).split(".")[0])
-        self.extensions_list.sort()
-        #Put Defualt to front of list
-        #Delete Default from list
-        self.extensions_list.remove("Default")
-        #Set to front
-        self.extensions_list.insert(0, "Default")
-        #Delete Josh's Choice Bundle from list
-        self.extensions_list.remove("Josh's Choice Bundle")
-        #Set to front
-        self.extensions_list.insert(0, "Josh's Choice Bundle")
-        self.extension_page_window.configure(background=bg)
-        self.search_var = StringVar()
-        self.search_var.trace('w', self.update_listbox)
-        self.searchbox = Entry(self.extension_page_window, textvariable=self.search_var, font=normal_font, relief=SUNKEN, borderwidth=3)
-        self.searchbox.pack(fill=X, expand=False)
-        self.searchbox.config(background=bg, foreground=fg, insertbackground=bg)
-        self.extensions_listbox = Listbox(self.extension_page_window, font=normal_font, relief=SUNKEN, borderwidth=3, width=50, height=20)
-        self.extensions_listbox.pack(fill=X)
-        self.extensions_listbox.config(background=bg, foreground=fg, selectbackground=bg, selectforeground=fg)
-        self.extensions_listbox.bind("<Double-Button-1>", self.inspect_extension)
-        for extension in self.extensions_list:
-            self.extensions_listbox.insert(END, extension)
-        self.update_listbox()
-        self.inpect_extension_button = Button(self.extension_page_window, text="Inspect Extension", command=self.inspect_extension, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
-        self.inpect_extension_button.pack()
-        self.inpect_extension_button.config(highlightbackground=bg)
-        self.use_extension_button = Button(self.extension_page_window, text="Use Extension", command=self.use_extension, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
-        self.use_extension_button.pack()
-        self.use_extension_button.config(highlightbackground=bg)
-        self.cancel_button = Button(self.extension_page_window, text="Cancel", command=self.cancel, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
-        self.cancel_button.pack()
-        self.cancel_button.config(highlightbackground=bg)
+        try:
+            for file in get_list_items():
+                file = file.split("/")[-1]
+                if file.endswith(".xt"):
+                    self.extensions_list.append(str(file).split(".")[0])
+            self.extensions_list.sort()
+            #Put Defualt to front of list
+            #Delete Default from list
+            self.extensions_list.remove("Default")
+            #Set to front
+            self.extensions_list.insert(0, "Default")
+            #Delete Josh's Choice Bundle from list
+            self.extensions_list.remove("Josh's Choice Bundle")
+            #Set to front
+            self.extensions_list.insert(0, "Josh's Choice Bundle")
+            self.extension_page_window.configure(background=bg)
+            self.search_var = StringVar()
+            self.search_var.trace('w', self.update_listbox)
+            self.searchbox = Entry(self.extension_page_window, textvariable=self.search_var, font=normal_font, relief=SUNKEN, borderwidth=3)
+            self.searchbox.pack(fill=X, expand=False)
+            self.searchbox.config(background=bg, foreground=fg, insertbackground=bg)
+            self.extensions_listbox = Listbox(self.extension_page_window, font=normal_font, relief=SUNKEN, borderwidth=3, width=50, height=20)
+            self.extensions_listbox.pack(fill=X)
+            self.extensions_listbox.config(background=bg, foreground=fg, selectbackground=bg, selectforeground=fg)
+            self.extensions_listbox.bind("<Double-Button-1>", self.inspect_extension)
+            for extension in self.extensions_list:
+                self.extensions_listbox.insert(END, extension)
+            self.update_listbox()
+            self.inpect_extension_button = Button(self.extension_page_window, text="Inspect Extension", command=self.inspect_extension, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
+            self.inpect_extension_button.pack()
+            self.inpect_extension_button.config(highlightbackground=bg)
+            self.use_extension_button = Button(self.extension_page_window, text="Use Extension", command=self.use_extension, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
+            self.use_extension_button.pack()
+            self.use_extension_button.config(highlightbackground=bg)
+            self.cancel_button = Button(self.extension_page_window, text="Cancel", command=self.cancel, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
+            self.cancel_button.pack()
+            self.cancel_button.config(highlightbackground=bg)
+        except:
+            showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later")
+            self.extension_page_window.destroy()
 
     def update_listbox(self):
         #Update the listbox
@@ -1434,72 +1440,75 @@ class extension_page(Frame):
             self.function(extension)
             self.extension_page_window.destroy()
         else:
-            showerror("Extension Inspection Error", "An Extension Inspection Error Occurred\n\nPlease Select An Extension To Inspect")
+            showwarning("Extension Inspection Error", "An Extension Inspection Error Occurred\n\nPlease Select An Extension To Inspect")
 
     def use_extension(self):
         #Use the extension
         if self.extensions_listbox.get(ANCHOR) != "":
-            extension = self.extensions_listbox.get(ANCHOR)
-            details = open_extension(folder / "extensions/{}.xt".format(extension))
-            the_keywords = details[5]
-            if the_keywords != None or "":
-                keywords = ""
-                for keyword in the_keywords:
-                    keywords += keyword + "\n"
-                #Remove the last newline
-                keywords = keywords[:-1]
-                #Update folder / keywords.txt
-                with open(folder / "keywords.txt", "w") as f:
-                    f.write(keywords)
-            else:
-                keywords = None
-            the_settings = details[6]
-            if the_settings != None or "":
-                settings = ""
-                for setting in the_settings:
-                    settings += setting + "\n"
-                #Remove the last newline
-                settings = settings[:-1]
-                #Update folder / settings.txt
-                with open(folder / "settings.txt", "w") as settings_file:
-                    settings_file.write(settings)
-                current_mode = settings.split("\n")[-1]
-                if current_mode == "light" and self.color_mode == "light":
-                    pass
-                elif current_mode == "light" and self.color_mode == "Dark":
-                    self.change_color()
-                elif current_mode == "Dark" and self.color_mode == "Dark":
-                    pass
-                elif current_mode == "Dark" and self.color_mode == "light":
-                    self.change_color()
-            else:
-                settings = None
-            the_theme = details[7]
-            if the_theme != None or "":
-                the_theme = the_theme[0] + "\n" + the_theme[1]
-                #Update folder / color_theme.txt
-                with open(folder / "color_theme.txt", "w") as color_theme:
-                    color_theme.write(the_theme)
-            else:
-                the_theme = None
-            the_font = details[8]
-            print(the_font)
-            if the_font != None or "":
-                family = the_font[0]
-                family = family.split(": ")[1]
-                normal = the_font[1]
-                normal = normal.split(": ")[1]
-                med = the_font[2]
-                med = med.split(": ")[1]
-                large = the_font[3]
-                large = large.split(": ")[1]
-                string_font = family + "\n" + normal + "\n" + med + "\n" + large
-                #Update folder / font.txt
-                with open(folder / "font.txt", "w") as font_file:
-                    font_file.write(string_font)
-            showinfo("Extension Applied", "Extension Applied Successfully\n\nThe Extension: \"{}\" has been applied".format(extension))
-            self.extension_page_window.destroy()
-
+            try:
+                extension = self.extensions_listbox.get(ANCHOR)
+                details = open_extension("https://jde-org.github.io/extensions/{}.xt".format(extension))
+                the_keywords = details[5]
+                if the_keywords != None or "":
+                    keywords = ""
+                    for keyword in the_keywords:
+                        keywords += keyword + "\n"
+                    #Remove the last newline
+                    keywords = keywords[:-1]
+                    #Update folder / keywords.txt
+                    with open(folder / "keywords.txt", "w") as f:
+                        f.write(keywords)
+                else:
+                    keywords = None
+                the_settings = details[6]
+                if the_settings != None or "":
+                    settings = ""
+                    for setting in the_settings:
+                        settings += setting + "\n"
+                    #Remove the last newline
+                    settings = settings[:-1]
+                    #Update folder / settings.txt
+                    with open(folder / "settings.txt", "w") as settings_file:
+                        settings_file.write(settings)
+                    current_mode = settings.split("\n")[-1]
+                    if current_mode == "light" and self.color_mode == "light":
+                        pass
+                    elif current_mode == "light" and self.color_mode == "Dark":
+                        self.change_color()
+                    elif current_mode == "Dark" and self.color_mode == "Dark":
+                        pass
+                    elif current_mode == "Dark" and self.color_mode == "light":
+                        self.change_color()
+                else:
+                    settings = None
+                the_theme = details[7]
+                if the_theme != None or "":
+                    the_theme = the_theme[0] + "\n" + the_theme[1]
+                    #Update folder / color_theme.txt
+                    with open(folder / "color_theme.txt", "w") as color_theme:
+                        color_theme.write(the_theme)
+                else:
+                    the_theme = None
+                the_font = details[8]
+                if the_font != None or "":
+                    family = the_font[0]
+                    family = family.split(": ")[1]
+                    normal = the_font[1]
+                    normal = normal.split(": ")[1]
+                    med = the_font[2]
+                    med = med.split(": ")[1]
+                    large = the_font[3]
+                    large = large.split(": ")[1]
+                    string_font = family + "\n" + normal + "\n" + med + "\n" + large
+                    #Update folder / font.txt
+                    with open(folder / "font.txt", "w") as font_file:
+                        font_file.write(string_font)
+                for text_box in self.text_boxes:
+                    text_box.redraw()
+                showinfo("Extension Applied", "Extension Applied Successfully\n\nThe Extension: \"{}\" has been applied".format(extension))
+                self.extension_page_window.destroy()
+            except:
+                showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later")
     def cancel(self):
         #Cancel the extension
         self.extension_page_window.destroy()

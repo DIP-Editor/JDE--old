@@ -1,6 +1,6 @@
-def get_extension_details(file_path):
-    with open(file_path, "r") as f:
-        lines = f.readlines()
+import requests
+def get_extension_details(web_path):
+    lines = requests.get("{}".format(web_path)).text.split("\n")
     #Remove first 25 lines 
     lines = lines[25:]
     extension_type = lines[0]
@@ -23,9 +23,6 @@ def parse_extension_code(extension_code, extension_permissions):
     #<font>
     #</font>
     #Turn extension code into a string
-    extension_code = "".join(extension_code)
-    #Split the string into individual lines
-    extension_code = extension_code.split("\n")
     return_tuple = ()
     if "keywords" in extension_permissions:
         keyword_start = extension_code.index("<keywords>")
@@ -57,8 +54,8 @@ def parse_extension_code(extension_code, extension_permissions):
         return_tuple += (None,)
     return return_tuple
 
-def open_extension(file_path):
-    details = get_extension_details(file_path)
+def open_extension(web_path):
+    details = get_extension_details(web_path)
     extension_type = details[0]
     extension_permissions = details[1]
     extension_name = details[2]
@@ -71,6 +68,16 @@ def open_extension(file_path):
     color_theme = extension_code[2]
     font = extension_code[3]
     return (extension_type, extension_permissions, extension_name, extension_description, extension_author, keywords, settings, color_theme, font)
-
+def get_list_items():
+    r = requests.get("https://jde-org.github.io/extensions.html")
+    r = str(r.text)
+    r = r.split("<ul>")[-1]
+    r = r.split("</ul>")[0]
+    r = r.split("<li>")[1:]
+    for i in range(len(r)):
+        r[i] = r[i].split("\n                        ")[1]
+        r[i] = r[i].split("\">")[0]
+        r[i] = r[i].split("<a href=\"")[1]
+    return r
 if __name__ == "__main__":
-    open_extension("extensions/Default.xt")
+    open_extension("https://jde-org.github.io/extensions/Default.xt")

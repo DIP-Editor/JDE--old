@@ -52,7 +52,7 @@ try:
     window.after(400, final_check)
 except:
     def show_version_could_not_be_checked():
-        showerror("Version Check", "Version Check Failed\n\nCould Not Connect To Server. Current Version: {}. Connect To The Internet To Check For Updates".format(current_version))
+        showwarning("Version Check", "Version Check Failed\n\nCould Not Connect To Server. Current Version: {}. Connect To The Internet To Check For Updates".format(current_version))
     window.after(400, show_version_could_not_be_checked)
 color_mode_file = open((folder / "settings.txt"), "r+")
 color_mode_soon = color_mode_file.readlines()
@@ -99,7 +99,7 @@ def open_file(event=None):
     file_contents = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes)
     window.focus_force()
     if file_contents == "":
-        showerror("File Opening Error", "An Error Occurred While Opening File\n\nNo File Was Selected") 
+        showwarning("File Opening Error", "An Error Occurred While Opening File\n\nNo File Was Selected") 
     else:
         #Check if file is a txt file
         if file_contents.split(".")[-1] == "txt":
@@ -162,7 +162,7 @@ def close_tab(event=None):
         path_list.pop(current_focus)
         main_notebook.forget(current_focus)
     else:
-        showerror("Tab Removal Error", "A Tab Removal Error Has Occured\n\nMust Have More Than One Tab To Remove Tabs")
+        showwarning("Tab Removal Error", "A Tab Removal Error Has Occured\n\nMust Have More Than One Tab To Remove Tabs")
 def save_file(event=None):
     current_focus = main_notebook.index(CURRENT)
     if path_list[current_focus] == "":
@@ -267,6 +267,27 @@ def redraw_all(event=None):
     for i in range(len(text_boxes)):
         text_boxes[i].redraw()
 window.bind("<Button-1>", redraw_all)
+def reset():
+    global bg
+    global fg
+    theme_style = open("color_theme.txt", "r").readlines()
+    light_mode_style = theme_style[0].split(";")
+    light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
+    light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
+    dark_mode_style = theme_style[1].split(";")
+    dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
+    dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
+    if color_mode == "Dark":
+        bg = dark_mode_bg
+        fg = dark_mode_fg
+    else:
+        bg = light_mode_bg
+        fg = light_mode_fg
+    for i in range(len(text_boxes)):
+        text_boxes[i].update()
+    main_label.update()
+    the_terminal.update()
+    main_notebook.update()
 def reset_syntax_colors(event=None):
     global text_boxes
     global path_list
@@ -316,6 +337,7 @@ def reset_syntax_colors(event=None):
     #Redraw current tab
     window.after(150, text_boxes[current_focus].redraw)
     text_boxes[current_focus].text.mark_set(INSERT, mark_sets[current_focus])
+    window.after(1, reset)
     return "Reset"
 reset_img = PhotoImage(file=(folder / "reset.png"))
 reset_syntax_button = Button(commands_sidebar, image=reset_img, font=medium_font, command=reset_syntax_colors, width=25, highlightbackground="#4e524f")
@@ -352,8 +374,8 @@ change_color_mode_button.place(relx=.5, rely=.7364, anchor=CENTER)
 ToolTip(change_color_mode_button, text="Change Color Mode", window=window)
 def show_extension(extension_name):
     base_name = extension_name
-    extension_name = (folder / "extensions/{}.xt".format(extension_name))
-    extension_path = str(folder / extension_name)
+    extension_name = ("https://jde-org.github.io/extensions/{}.xt".format(extension_name))
+    extension_path = extension_name
     details = open_extension(extension_path)
     create_new_tab(have_syntax=False)
     current_focus = main_notebook.index("current")
@@ -370,12 +392,12 @@ def show_extension(extension_name):
     the_settings = details[6]
     the_theme = details[7]
     the_font = details[8]
-    text_boxes[current_focus].insert(1.0, "\n\nExtension Name: {}\nExtension Type: {}\nExtension Accesses: {}\nExtension Description: {}\nExtension Author: {}\nExtension Keywords: {}\n\nExtension Settings: {}\n\nExtension Theme: {}\n\nExtension Font: {}".format(name, type, accesses, description, author, keywords, the_settings, the_theme, the_font))
+    text_boxes[current_focus].insert(1.0, "\n\nExtension Name: {}\nExtension Type: {}\nExtension Accesses: {}\nExtension Description: {}\nExtension Author: {}\nExtension Keywords: {}\nExtension Settings: {}\nExtension Theme: {}\nExtension Font: {}".format(name, type, accesses, description, author, keywords, the_settings, the_theme, the_font))
     text_boxes[current_focus].text.image_create(1.0, image=show_extension_img)
     text_boxes[current_focus].redraw()
     text_boxes[current_focus].text.configure(state=DISABLED)
 show_extension_img = PhotoImage(file=(folder / "extensions.png"))
-show_extension_button = Button(commands_sidebar, image=show_extension_img, font=medium_font, command= lambda: extension_page(window, color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), function=show_extension, change_color=change_color_mode), width=25, highlightbackground="#4e524f")
+show_extension_button = Button(commands_sidebar, image=show_extension_img, font=medium_font, command= lambda: extension_page(window, color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), function=show_extension, change_color=change_color_mode, text_boxes = text_boxes), width=25, highlightbackground="#4e524f")
 show_extension_button.place(relx=.5, rely=.789, anchor=CENTER)
 ToolTip(show_extension_button, text="Open Extensions", window=window)
 def report_a_bug(event=None):
@@ -397,7 +419,7 @@ def run_file(event=None):
         current_focus = main_notebook.index("current")
         path = path_list[current_focus]
         if path == "":
-            showerror("Runtime Error", "Can Not Run File\n\nNo File Has Been Selected Or Opened")
+            showwarning("Runtime Error", "Can Not Run File\n\nNo File Has Been Selected Or Opened")
         else:
             save_file()
             file_type = path.split(".")
@@ -405,7 +427,7 @@ def run_file(event=None):
             if file_type == "py":
                 the_terminal.run_command("python3 {}".format(path))
             else:
-                showerror("Runtime Error", "Runtime Error\n\nFile Type Incompatible. File Could Not Be Run")
+                showwarning("Runtime Error", "Runtime Error\n\nFile Type Incompatible. File Could Not Be Run")
 run_button = Button(commands_sidebar, image=run_img, font=medium_font, command=run_file, width=25, height=25, highlightbackground="#4e524f")
 run_button.place(relx=.5, rely=.0526, anchor=CENTER)
 run_button.configure(highlightbackground="#4e524f")
