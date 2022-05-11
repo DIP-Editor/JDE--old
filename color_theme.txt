@@ -1,0 +1,2 @@
+light: bg=#FFFFFF; fg=#4f4c4d;
+dark: bg=#4f4c4d; fg=#FFFFFF;

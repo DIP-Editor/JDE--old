@@ -3,6 +3,7 @@ from tkinter.filedialog import *
 from tkinter import colorchooser
 from tkinter.font import Font
 from tkinter.messagebox import *
+from extension_handler import *
 import os
 # from pygments import *
 # from pygments.formatters import *
@@ -20,7 +21,13 @@ if getattr(sys, "frozen", False):
     folder = Path(sys._MEIPASS)
 else:
     folder = Path(__file__).parent
-
+theme_style = open("color_theme.txt", "r").readlines()
+light_mode_style = theme_style[0].split(";")
+light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
+light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
+dark_mode_style = theme_style[1].split(";")
+dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
+dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
 with open(folder / "keywords.txt", "r") as f:
     keywords_list = f.read().splitlines()
 # keywords_list = ["from", "tkinter", "i", "import", "Tk", "winfo_screenwidth", "winfo_screenheight", "relx", "rely", "anchor", "CENTER", "mainloop", "geometry",  "Label", "Button", "Text", "Entry", "pack", "place", "grid", "False", "await", "else", "pass", "None", "break", "except", "in", "range", "raise", "True", "class", "finally", "is", "return", "and", "continue", "for", "lambda", "try", "as", "def", "nonlocal", "while", "assert", "del", "global", "not", "with", "async", "elif", "if", "or", "yield", "abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes", "callable", "chr", "classmethod", "compile", "complex", "delattr", "dict", "dir", "divmod", "enumerate", "eval", "exec", "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass", "iter", "len", "list", "locals", "map", "max", "memoryview", "min", "next", "object", "oct", "open", "ord", "pow", "print", "property", "repr", "reversed", "round", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "super", "tuple", "type", "vars", "zip", "breakpoint"]
@@ -58,9 +65,9 @@ class ultra_text(Frame):
         self.color_mode = kwargs.pop("color_mode")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
+            bg = dark_mode_bg
         else:
-            bg = "white"
+            bg = light_mode_bg
         #Defining colors for basic syntax highlighting
         self.cdg = ic.ColorDelegator()
         self.cdg.prog = re.compile(r"\b(?P<MYGROUP>tkinter)\b|" + ic.make_pat(), re.S)
@@ -278,11 +285,11 @@ class ultra_text(Frame):
 
     def change_color(self, new_color):
         if new_color == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.config(background=bg)
         self.text.config(bg=bg, fg=fg, insertbackground=fg)
         self.numberLines.config(bg=bg)
@@ -553,33 +560,30 @@ class search_text(Frame):
         self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.search_text_window = Toplevel(self)
         self.search_text_window.title("Search / Find and Replace")
         self.search_text_window.config(bg=bg)
         self.search_text_window.geometry("+{}+{}".format(self.x, self.y))
         self.search_text_window.attributes("-topmost", True)
-        self.text_search_entry = Entry(self.search_text_window, borderwidth=3, font=("Courier New bold", 15))
+        self.text_search_entry = Entry(self.search_text_window, borderwidth=3, font=("Courier New bold", 15), relief=SUNKEN)
         self.search_button = Button(self.search_text_window, text="Search File", font=("Courier New bold", 15), command=self.find)
-        self.text_replace_entry = Entry(self.search_text_window, borderwidth=3, font=("Courier New bold", 15))
+        self.text_replace_entry = Entry(self.search_text_window, borderwidth=3, font=("Courier New bold", 15), relief=SUNKEN)
         self.replace_button = Button(self.search_text_window, text="Replace", font=("Courier New bold", 15), command=self.find_and_replace)
-        self.replace_all_button = Button(self.search_text_window, text="Replace All", font=("Courier New bold", 15), command=self.replace_all)
         self.search_list = list()
         self.s = ""
         self.text_search_entry.pack(side=LEFT, fill=BOTH, expand=1)
         self.search_button.pack(side=LEFT)
         self.text_replace_entry.pack(side=LEFT, fill=BOTH, expand=1)
         self.replace_button.pack(side=LEFT)
-        self.replace_all_button.pack(side=LEFT)
         self.text_search_entry.configure(bg=bg, insertbackground = fg, fg=fg)
         self.text_replace_entry.configure(bg=bg, insertbackground = fg, fg=fg)
         self.search_button.configure(highlightbackground=bg)
         self.replace_button.configure(highlightbackground=bg)
-        self.replace_all_button.configure(highlightbackground=bg)
 
     def attach(self, text):
         self.text = text
@@ -590,6 +594,7 @@ class search_text(Frame):
             self.text.tag_remove(SEL, 1.0,"end-1c")
         
     def find(self):
+        print("\"{}\"".format(self.text.get("1.0", "end")))
         self.reset_list()
         self.text.focus_set()
         self.s = self.text_search_entry.get()
@@ -650,25 +655,17 @@ class search_text(Frame):
             self.text.mark_set("insert", "insert linestart")
             self.reset_list()
 
-    def replace_all(self):
-        #Replaces all matches in the text box with the text in the replace box
-        self.s = self.text_search_entry.get()
-        self.r = self.text_replace_entry.get()
-        contents = self.text.get("1.0", END)
-        for i in range(contents.count(self.s)):
-            self.find_and_replace()
-
 class temp_name_pop_up:
     def __init__(self, text_info, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
         self.x = kwargs.pop("x")
         self.y = kwargs.pop("y")
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.text_info = text_info.get("1.0", END)
         self.pop_up_window = Toplevel()
         self.pop_up_window.title("Template Name")
@@ -679,7 +676,7 @@ class temp_name_pop_up:
         self.pop_up_name_label = Label(self.pop_up_window, text="Template Name:", font=("Courier New bold", 15))
         self.pop_up_name_label.place(relx=.5, rely=.1, anchor=CENTER)
         self.pop_up_name_label.configure(bg=bg, fg=fg)
-        self.pop_up_name_entry = Entry(self.pop_up_window, font=("Courier New bold", 15))
+        self.pop_up_name_entry = Entry(self.pop_up_window, font=("Courier New bold", 15), borderwidth=3, relief=SUNKEN)
         self.pop_up_name_entry.place(relx=.5, rely=.4, anchor=CENTER)
         self.pop_up_name_entry.configure(bg=bg, insertbackground = fg, fg=fg)
         self.pop_up_name_entry.focus_force()
@@ -693,7 +690,7 @@ class temp_name_pop_up:
     def confirm(self):
         temp_name = self.pop_up_name_entry.get()
         if (folder / "{}.py".format(temp_name)).exists():
-            showinfo("Template Name Error", "Template Name Already Exists")
+            showinfo("Template Name Error", "A Template Naming Error Has Occurred\n\nTemplate Name Already Exists")
         else:
             if (temp_name != "") and (temp_name != " "):
                 with open(folder / "{}.py".format(temp_name), "w") as f:
@@ -716,11 +713,11 @@ class temp_open_pop_up(Frame):
         self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.temp_open_pop_up_window = Toplevel()
         self.temp_open_pop_up_window.title("Template Selection")
         self.temp_open_pop_up_window.config(bg=bg)
@@ -757,11 +754,12 @@ class temp_open_pop_up(Frame):
 
     def export_template(self):
         self.file_chosen = self.temp_open_pop_up_listbox.get(ANCHOR) + ".py"
-        self.contents = text.get(1.0, END)
         if self.file_chosen != ".py":
             file_path = asksaveasfile(initialfile=self.file_chosen, defaultextension=".py", filetypes=[("Python Files", "*.py")], initialdir="/")
             if file_path is not None:
-                with open(file_path, "w") as f:
+                with open(folder / self.file_chosen, "r") as f:
+                    self.contents = f.read()
+                with open(file_path.name, "w") as f:
                     f.write(self.contents)
                     f.close()
                 showinfo("Template Exported", "Template Exported")
@@ -794,11 +792,11 @@ class temp_destroy_pop_up:
         self.x = kwargs.pop("x")
         self.y = kwargs.pop("y")
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.temp_destroy_pop_up_window = Toplevel()
         self.temp_destroy_pop_up_window.title("Template Selection")
         self.temp_destroy_pop_up_window.config(bg=bg)
@@ -841,18 +839,21 @@ class temp_destroy_pop_up:
 
 class settings(Frame):
     def __init__(self, *args, **kwargs):
+        self.window = kwargs.pop("window")
         self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         self.settings_window = Toplevel()
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.settings_window.configure(background=bg)
         self.settings_window.title("Settings")
-        self.settings_window.geometry("375x450+0+0")
+        self.settings_window.geometry("375x450+{}+{}".format(self.x, self.y))
         self.settings_window.resizable(width=False, height=False)
         self.settings_window.attributes("-topmost", True)
         self.settings_window.focus_force()
@@ -968,22 +969,24 @@ class settings(Frame):
         self.settings_window.destroy()
 
     def keyword_changer(self):
-        keyword_change_page(color_mode = self.color_mode)
+        keyword_change_page(color_mode = self.color_mode, x=self.window.winfo_x(), y=self.window.winfo_y())
 
 class report_bug(Frame):
     def __init__(self, *args, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.report_bug_window = Toplevel()
         self.report_bug_window.configure(background=bg)
         self.report_bug_window.title("Report Bug")
-        self.report_bug_window.geometry("410x350+0+0")
+        self.report_bug_window.geometry("410x350+{}+{}".format(self.x, self.y))
         self.report_bug_window.resizable(width=False, height=False)
         self.report_bug_window.attributes("-topmost", True)
         self.report_bug_window.focus_force()
@@ -993,13 +996,13 @@ class report_bug(Frame):
         self.report_bug_window_text_label = Label(self.report_bug_window, text="Subject:", font=("Courier New bold", 15))
         self.report_bug_window_text_label.place(relx=.5, rely=.175, anchor=CENTER)
         self.report_bug_window_text_label.configure(bg=bg, fg=fg)
-        self.subject_entry = Entry(self.report_bug_window, borderwidth=2, relief=RIDGE, width=40)
+        self.subject_entry = Entry(self.report_bug_window, borderwidth=3, relief=SUNKEN, width=40)
         self.subject_entry.place(relx=.5, rely=.25, anchor=CENTER)
         self.subject_entry.configure(bg=bg, insertbackground=fg, fg=fg)
         self.message_text_label = Label(self.report_bug_window, text="Message:", font=("Courier New bold", 15))
         self.message_text_label.place(relx=.5, rely=.33, anchor=CENTER)
         self.message_text_label.configure(bg=bg, fg=fg)
-        self.message_text = Text(self.report_bug_window, borderwidth=2, relief=RIDGE, width=50, height=10)
+        self.message_text = Text(self.report_bug_window, borderwidth=3, relief=SUNKEN, width=50, height=10)
         self.message_text.place(relx=.5, rely=.6, anchor=CENTER)
         self.message_text.configure(bg=bg, insertbackground=fg, fg=fg)
         self.report_bug_button = Button(self.report_bug_window, text="Report Bug", font=("Courier New bold", 15), command=self.report_bug)
@@ -1036,16 +1039,18 @@ class report_bug(Frame):
 class help_info(Frame):
     def __init__(self, *args, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.help_info_window = Toplevel()
         self.help_info_window.title("Help")
-        self.help_info_window.geometry("400x400+0+0")
+        self.help_info_window.geometry("400x400+{}+{}".format(self.x, self.y))
         self.help_info_window.configure(background=bg)
         self.help_info_window.resizable(width=False, height=False)
         self.help_info_window.attributes("-topmost", True)
@@ -1068,16 +1073,18 @@ class help_info(Frame):
 class shortcuts_page(Frame):
     def __init__(self, *args, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.shortcuts_page_window = Toplevel()
         self.shortcuts_page_window.title("Shortcuts")
-        self.shortcuts_page_window.geometry("400x400+0+0")
+        self.shortcuts_page_window.geometry("400x400+{}+{}".format(self.x, self.y))
         self.shortcuts_page_window.configure(background=bg)
         self.shortcuts_page_window.resizable(width=False, height=False)
         self.shortcuts_page_window.attributes("-topmost", True)
@@ -1100,16 +1107,18 @@ class shortcuts_page(Frame):
 class keyword_change_page(Frame):
     def __init__(self, *args, **kwargs):
         self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
         Frame.__init__(self, *args, **kwargs)
         if self.color_mode == "Dark":
-            bg = "#4f4c4d"
-            fg = "white"
+            bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
-            bg = "white"
-            fg = "#4f4c4d"
+            bg = light_mode_bg
+            fg = light_mode_fg
         self.keyword_change_page_window = Toplevel()
         self.keyword_change_page_window.title("Keyword Change")
-        self.keyword_change_page_window.geometry("400x500+0+0")
+        self.keyword_change_page_window.geometry("400x500+{}+{}".format(self.x, self.y))
         self.keyword_change_page_window.configure(background=bg)
         self.keyword_change_page_window.resizable(width=False, height=False)
         self.keyword_change_page_window.attributes("-topmost", True)
@@ -1122,7 +1131,7 @@ class keyword_change_page(Frame):
         self.keyword_listbox.configure(bg=bg, fg=fg, selectbackground=bg, selectforeground=fg)
         for item in keywords_list:
             self.keyword_listbox.insert(END, item)
-        self.add_entry = Entry(self.keyword_change_page_window, width=30)
+        self.add_entry = Entry(self.keyword_change_page_window, width=30, borderwidth=3, relief=SUNKEN)
         self.add_entry.place(relx=.5, rely=.525, anchor=CENTER)
         self.add_entry.configure(bg=bg, fg=fg, insertbackground=fg)
         self.add_button = Button(self.keyword_change_page_window, text="Add Item", font=("Courier New bold", 15), width=15, command=self.add)
@@ -1225,6 +1234,107 @@ class keyword_change_page(Frame):
     def ok(self):
         self.keyword_change_page_window.destroy()
 
+class extension_page(Frame):
+    def __init__(self, *args, **kwargs):
+        self.function = kwargs.pop("function")
+        self.color_mode = kwargs.pop("color_mode")
+        self.x = kwargs.pop("x")
+        self.y = kwargs.pop("y")
+        Frame.__init__(self, *args, **kwargs)
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.extension_page_window = Toplevel()
+        self.extension_page_window.geometry("+{}+{}".format(self.x, self.y))
+        self.extension_page_window.resizable(False, False)
+        self.extension_page_window.title("Extensions")
+        self.extensions_list = []
+        #get extensions from extensions folder
+        for file in os.listdir(folder / "extensions"):
+            if file.endswith(".xt"):
+                self.extensions_list.append(str(file).split(".")[0])
+        self.extension_page_window.configure(background=bg)
+        self.search_var = StringVar()
+        self.search_var.trace('w', self.update_listbox)
+        self.searchbox = Entry(self.extension_page_window, textvariable=self.search_var, font=("Courier New bold", 15), relief=SUNKEN, borderwidth=3)
+        self.searchbox.pack(fill=X, expand=False)
+        self.searchbox.config(background=bg, foreground=fg, insertbackground=bg)
+        self.extensions_listbox = Listbox(self.extension_page_window, font=("Courier New bold", 15), relief=SUNKEN, borderwidth=3, width=50, height=20)
+        self.extensions_listbox.pack(fill=X)
+        self.extensions_listbox.config(background=bg, foreground=fg, selectbackground=bg, selectforeground=fg)
+        self.extensions_listbox.bind("<Double-Button-1>", self.inpect_extension)
+        for extension in self.extensions_list:
+            self.extensions_listbox.insert(END, extension)
+        self.update_listbox()
+        self.inpect_extension_button = Button(self.extension_page_window, text="Inspect Extension", command=self.inpect_extension, font=("Courier New bold", 15), relief=SUNKEN, borderwidth=3, width=20)
+        self.inpect_extension_button.pack()
+        self.inpect_extension_button.config(highlightbackground=bg)
+        self.use_extension_button = Button(self.extension_page_window, text="Use Extension", command=self.use_extension, font=("Courier New bold", 15), relief=SUNKEN, borderwidth=3, width=20)
+        self.use_extension_button.pack()
+        self.use_extension_button.config(highlightbackground=bg)
+        self.cancel_button = Button(self.extension_page_window, text="Cancel", command=self.cancel, font=("Courier New bold", 15), relief=SUNKEN, borderwidth=3, width=20)
+        self.cancel_button.pack()
+        self.cancel_button.config(highlightbackground=bg)
+
+    def update_listbox(self, *args):
+        search_term = self.search_var.get()
+        self.extensions_listbox.delete(0, END)
+        for item in self.extensions_list:
+            if search_term.lower() in item.lower():
+                self.extensions_listbox.insert(END, item)
+
+    def inpect_extension(self, *args):
+        if self.extensions_listbox.get(ANCHOR) != "":
+            extension = self.extensions_listbox.get(ANCHOR)
+            self.function(extension)
+            self.extension_page_window.destroy()
+        else:
+            showerror("Extension Inspection Error", "An Extension Inspection Error Occurred\n\nPlease Select An Extension To Inspect")
+
+    def use_extension(self, *args):
+        if self.extensions_listbox.get(ANCHOR) != "":
+            extension = self.extensions_listbox.get(ANCHOR)
+            details = open_extension(folder / "extensions/{}.xt".format(extension))
+            the_keywords = details[5]
+            if the_keywords != None or "":
+                keywords = ""
+                for keyword in the_keywords:
+                    keywords += keyword + "\n"
+                #Remove the last newline
+                keywords = keywords[:-1]
+                #Update folder / keywords.txt
+                with open(folder / "keywords.txt", "w") as f:
+                    f.write(keywords)
+            else:
+                keywords = None
+            the_settings = details[6]
+            if the_settings != None or "":
+                settings = ""
+                for setting in the_settings:
+                    settings += setting + "\n"
+                #Remove the last newline
+                settings = settings[:-1]
+                #Update folder / settings.txt
+                with open(folder / "settings.txt", "w") as settings_file:
+                    settings_file.write(settings)
+            else:
+                settings = None
+            the_theme = details[7]
+            if the_theme != None or "":
+                the_theme = the_theme[0] + "\n" + the_theme[1]
+                #Update folder / color_theme.txt
+                with open(folder / "color_theme.txt", "w") as color_theme:
+                    color_theme.write(the_theme)
+            else:
+                the_theme = None
+            showinfo("Extension Applied", "Extension Applied Successfully\n\nThe Extension: \"{}\" has been applied".format(extension))
+            self.extension_page_window.destroy()
+    def cancel(self):
+        self.extension_page_window.destroy()
+
 #Testing purposes
 if __name__ == "__main__":
     root = Tk()
@@ -1233,10 +1343,8 @@ if __name__ == "__main__":
     height = root.winfo_screenheight()
     root.geometry("{}x{}+0+0".format(width, height))
     # Main widget called ultra_text
-    text = ultra_text(root, window=root, color_mode = "Light", width=130, height=30)
-    text.place(relx=.5, rely=.5, anchor=CENTER)
-    text.text.focus()
-    text.change_color("Light")
     # # keyword_change_page(root, color_mode = "Light")
     # settings(root, color_mode = "Light")
+    extension_page(root, color_mode = "Light", x = 0, y = 0, function = lambda x: print(x))
+    root.iconify()
     root.mainloop()

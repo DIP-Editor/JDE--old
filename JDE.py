@@ -15,9 +15,16 @@ if getattr(sys, 'frozen', False):
     folder = Path(sys._MEIPASS)
 else:
     folder = Path(__file__).parent
+theme_style = open("color_theme.txt", "r").readlines()
+light_mode_style = theme_style[0].split(";")
+light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
+light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
+dark_mode_style = theme_style[1].split(";")
+dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
+dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
 path_list = []
 window = Tk()
-current_version = "0.0.6"
+current_version = "0.0.7"
 try:
     version = get_version()
     def final_check():
@@ -45,11 +52,11 @@ if color_mode_soon == "":
     color_mode_soon = "dark"
 color_mode = color_mode_soon
 if color_mode == "Dark":
-    bg = "#4f4c4d"
-    fg = "white"
+    bg = dark_mode_bg
+    fg = dark_mode_fg
 else:
-    bg = "white"
-    fg = "#4f4c4d"
+    bg = light_mode_bg
+    fg = light_mode_fg
 #highlightbackground="#4e524f"
 run_img = PhotoImage(file=str(folder / "run.png"))
 s = Style(window)
@@ -112,7 +119,7 @@ def open_file(event=None):
         window.after(200, text_boxes[current_focus].redraw)
 open_img = PhotoImage(file=str(folder / "open.png"))
 open_button = Button(commands_sidebar, image=open_img, font=("Courier New bold", 20), command=open_file, width=25, highlightbackground="#4e524f")
-open_button.place(relx=.5, rely=.11, anchor=CENTER)
+open_button.place(relx=.5, rely=.1052, anchor=CENTER)
 ToolTip(open_button, text="Open File", window=window)
 window.bind("<Command-o>", open_file)
 def create_new_tab(event=None):
@@ -153,7 +160,7 @@ def save_file(event=None):
         open(path, "r+").write(contents)
 save_img = PhotoImage(file=str(folder / "save.png"))
 save_button = Button(commands_sidebar, image=save_img, font=("Courier New bold", 20), command=save_file, width=25, highlightbackground="#4e524f")
-save_button.place(relx=.5, rely=.165, anchor=CENTER)
+save_button.place(relx=.5, rely=.1578, anchor=CENTER)
 ToolTip(save_button, text="Save", window=window)
 window.bind("<Command-s>", save_file)
 def save_as_file():
@@ -175,7 +182,7 @@ def save_as_file():
         main_notebook.tab(text_boxes[current_focus], text="{}".format(new_path.split("/")[-1]))
 save_as_img = PhotoImage(file=(folder / "save_as.png"))
 save_as_button = Button(commands_sidebar, image=save_as_img, font=("Courier New bold", 20), command=save_as_file, width=25, highlightbackground="#4e524f")
-save_as_button.place(relx=.5, rely=.22, anchor=CENTER)
+save_as_button.place(relx=.5, rely=.2104, anchor=CENTER)
 ToolTip(save_as_button, text="Save As", window=window)
 def copy_contents():
     current_focus = main_notebook.index("current")
@@ -183,7 +190,7 @@ def copy_contents():
     copy(contents)
 copy_img = PhotoImage(file=(folder / "copy.png"))
 copy_button = Button(commands_sidebar, image=copy_img, font=("Courier New bold", 20), command=copy_contents, width=25, highlightbackground="#4e524f") 
-copy_button.place(relx=.5, rely=.275, anchor=CENTER)
+copy_button.place(relx=.5, rely=.263, anchor=CENTER)
 ToolTip(copy_button, text="Copy Contents of File", window=window)
 def paste_contents():
     current_focus = main_notebook.index("current")
@@ -191,7 +198,7 @@ def paste_contents():
     text_boxes[current_focus].redraw()
 paste_img = PhotoImage(file=(folder / "paste.png"))
 paste_button = Button(commands_sidebar, image=paste_img, font=("Courier New bold", 20), command=paste_contents, width=25, highlightbackground="#4e524f")
-paste_button.place(relx=.5, rely=.33, anchor=CENTER)
+paste_button.place(relx=.5, rely=.3156, anchor=CENTER)
 ToolTip(paste_button, text="Paste Clipboard Into File", window=window)
 def clear_contents():
     current_focus = main_notebook.index("current")
@@ -199,40 +206,40 @@ def clear_contents():
     text_boxes[current_focus].redraw()
 clear_img = PhotoImage(file=(folder / "clear_text.png"))
 clear_button = Button(commands_sidebar, image=clear_img, font=("Courier New bold", 20), command=clear_contents, width=25, highlightbackground="#4e524f")
-clear_button.place(relx=.5, rely=.385, anchor=CENTER)
+clear_button.place(relx=.5, rely=.3682, anchor=CENTER)
 ToolTip(clear_button, text="Clear Contents of File", window=window)
 def clear_terminal():
     the_terminal.clear()
 clear_terminal_img = PhotoImage(file=(folder / "clear_terminal.png"))
 clear_terminal_button = Button(commands_sidebar, image=clear_terminal_img, font=("Courier New bold", 20), command=clear_terminal, width=25, highlightbackground="#4e524f")
-clear_terminal_button.place(relx=.5, rely=.44, anchor=CENTER)
+clear_terminal_button.place(relx=.5, rely=.4208, anchor=CENTER)
 ToolTip(clear_terminal_button, text="Clear Terminal", window=window)
 def create_template():
     current_focus = main_notebook.index("current")
     temp_name_pop_up(text_boxes[current_focus], x=window.winfo_x(), y=window.winfo_y(), color_mode = color_mode)
 create_template_img = PhotoImage(file=(folder / "create_template.png"))
 create_template_button = Button(commands_sidebar, image=create_template_img, font=("Courier New bold", 20), command=create_template, width=25, highlightbackground="#4e524f")
-create_template_button.place(relx=.5, rely=.495, anchor=CENTER)
+create_template_button.place(relx=.5, rely=.4734, anchor=CENTER)
 ToolTip(create_template_button, text="Create Template", window=window)
 def open_template():
     current_focus = main_notebook.index("current")
     text_boxes[current_focus].open_template(window.winfo_x(), window.winfo_y(), color_mode = color_mode)
 open_template_img = PhotoImage(file=(folder / "open_template.png"))
 open_template_button = Button(commands_sidebar, image=open_template_img, font=("Courier New bold", 20), command=open_template, width=25, highlightbackground="#4e524f")
-open_template_button.place(relx=.5, rely=.55, anchor=CENTER)
+open_template_button.place(relx=.5, rely=.526, anchor=CENTER)
 ToolTip(open_template_button, text="Open Template", window=window)
 def delete_template():
     temp_destroy_pop_up(color_mode = color_mode, x=window.winfo_x(), y=window.winfo_y())
 delete_template_img = PhotoImage(file=(folder / "delete_template.png"))
 delete_template_button = Button(commands_sidebar, image=delete_template_img, font=("Courier New bold", 20), command=delete_template, width=25, highlightbackground="#4e524f")
-delete_template_button.place(relx=.5, rely=.605, anchor=CENTER)
+delete_template_button.place(relx=.5, rely=.5786, anchor=CENTER)
 ToolTip(delete_template_button, text="Delete Template", window=window)
 def find_replace(event=None):
     current_focus = main_notebook.index("current")
     text_boxes[current_focus].make_find_and_replace(window.winfo_x(), window.winfo_y(), color_mode = color_mode)
 find_replace_img = PhotoImage(file=(folder / "find_and_replace.png"))
 find_replace_button = Button(commands_sidebar, image=find_replace_img, font=("Courier New bold", 20), command=find_replace, width=25, highlightbackground="#4e524f")
-find_replace_button.place(relx=.5, rely=.66, anchor=CENTER)
+find_replace_button.place(relx=.5, rely=.6312, anchor=CENTER)
 ToolTip(find_replace_button, text="Find and Replace", window=window)
 window.bind("<Command-f>", find_replace)
 def stackoverflow(event=None):
@@ -244,97 +251,116 @@ def redraw_all(event=None):
         text_boxes[i].redraw()
 window.bind("<Button-1>", redraw_all)
 def reset_syntax_colors(event=None):
-    reset_continue = askyesno("This Feature is Experimental", "This Feature is Experimental. Because of This, We Cannot Ensure That This Feature Will Work Properly.\n\nAre You Sure You Want To Reset Syntax Colors?")
-    if reset_continue:
-        global text_boxes
-        global path_list
-        current_focus = main_notebook.index("current")
-        #Get all info from the tabs
-        yviews = []
-        xviews = []
-        text_names = []
-        content = []
-        paths = []
-        mark_sets = []
-        # temp_autocompletes = []
-        for i in range(len(text_boxes)):
-            yviews.append(text_boxes[i].text.yview())
-            xviews.append(text_boxes[i].text.xview())
-            #get name of i in notebook
-            text_names.append(main_notebook.tab(i, "text"))
-            content.append(text_boxes[i].text.get(1.0, END))
-            #if last line of content is empty, remove it
-            if content[i][-1] == "\n":
-                content[i] = content[i][:-1]
-            paths.append((path_list[i]))
-            mark_sets.append(text_boxes[i].index(INSERT))
-            # temp_autocompletes.append(text_boxes[i].temporary_autocomplete_list)
-        for i in range(len(text_boxes)):
-            path_list[i] = paths[i]
-        #destroy all text boxes
-        for i in range(len(text_boxes)):
-            main_notebook.forget(len(text_boxes)-i-1)
-        text_boxes = []
-        for i in range(len(content)):
-            text_boxes.append(ultra_text(main_notebook, window=window, color_mode = color_mode))
-            main_notebook.add(text_boxes[i], text=text_names[i])
-            text_boxes[i].text.insert(INSERT, content[i])
-            text_boxes[i].redraw()
-            text_boxes[i].text.yview(MOVETO, yviews[i][0])
-            text_boxes[i].text.xview(MOVETO, xviews[i][1])
-            text_boxes[i].text.focus_set()
-            text_boxes[i].text.mark_set(INSERT, mark_sets[i])
-            # text_boxes[i].temporary_autocomplete_list = temp_autocompletes[i]
-        #Set the current tab to current_focus
-        main_notebook.select(current_focus)
-        text_boxes[current_focus].text.focus_set()
-        #Redraw current tab
-        window.after(150, text_boxes[current_focus].redraw)
-        text_boxes[current_focus].text.mark_set(INSERT, mark_sets[current_focus])
-        return "Reset"
-    else:
-        showinfo("Syntax Reset Cancelled", "Syntax Reset Cancelled\n\nYou Have Canceled The Syntax Highlighting Reset")
-        return "Cancelled"
+    global text_boxes
+    global path_list
+    current_focus = main_notebook.index("current")
+    #Get all info from the tabs
+    yviews = []
+    xviews = []
+    text_names = []
+    content = []
+    paths = []
+    mark_sets = []
+    # temp_autocompletes = []
+    for i in range(len(text_boxes)):
+        yviews.append(text_boxes[i].text.yview())
+        xviews.append(text_boxes[i].text.xview())
+        #get name of i in notebook
+        text_names.append(main_notebook.tab(i, "text"))
+        content.append(text_boxes[i].text.get(1.0, END))
+        #if last line of content is empty, remove it
+        if content[i][-1] == "\n":
+            content[i] = content[i][:-1]
+        paths.append((path_list[i]))
+        mark_sets.append(text_boxes[i].index(INSERT))
+        # temp_autocompletes.append(text_boxes[i].temporary_autocomplete_list)
+    for i in range(len(text_boxes)):
+        path_list[i] = paths[i]
+    #destroy all text boxes
+    for i in range(len(text_boxes)):
+        main_notebook.forget(len(text_boxes)-i-1)
+    text_boxes = []
+    for i in range(len(content)):
+        text_boxes.append(ultra_text(main_notebook, window=window, color_mode = color_mode))
+        main_notebook.add(text_boxes[i], text=text_names[i])
+        text_boxes[i].text.insert(INSERT, content[i])
+        text_boxes[i].redraw()
+        text_boxes[i].text.yview(MOVETO, yviews[i][0])
+        text_boxes[i].text.xview(MOVETO, xviews[i][1])
+        text_boxes[i].text.focus_set()
+        text_boxes[i].text.mark_set(INSERT, mark_sets[i])
+        # text_boxes[i].temporary_autocomplete_list = temp_autocompletes[i]
+    #Set the current tab to current_focus
+    main_notebook.select(current_focus)
+    text_boxes[current_focus].text.focus_set()
+    #Redraw current tab
+    window.after(150, text_boxes[current_focus].redraw)
+    text_boxes[current_focus].text.mark_set(INSERT, mark_sets[current_focus])
+    return "Reset"
 reset_img = PhotoImage(file=(folder / "reset.png"))
 reset_syntax_button = Button(commands_sidebar, image=reset_img, font=("Courier New bold", 20), command=reset_syntax_colors, width=25, highlightbackground="#4e524f")
-reset_syntax_button.place(relx=.5, rely=.715, anchor=CENTER)
+reset_syntax_button.place(relx=.5, rely=.6838, anchor=CENTER)
 ToolTip(reset_syntax_button, text="Reset Syntax Highlighting", window=window)
 def change_color_mode(event=None):
     global color_mode
     if color_mode == "Dark":
         color_mode = "light"
-        bg = "white"
-        fg = "#4f4c4d"
+        bg = light_mode_bg
+        fg = light_mode_fg
     else:
         color_mode = "Dark"
-        bg = "#4f4c4d"
-        fg = "white"
-    showinfo("Color Mode Change Requires Syntax Highlighting Reset", "Color Mode Change Requires Syntax Highlighting Reset\n\nYou Must Reset Syntax Highlighting To See The Changes. Because of This, You Will Be Prompted To Do So")
-    cancelled_or_go = reset_syntax_colors()
-    if cancelled_or_go == "Reset":
-        for i in range(len(text_boxes)):
-            text_boxes[i].configure(bg=bg)
-            text_boxes[i].change_color("{}".format(color_mode))
-        with open(folder / "settings.txt", "r+") as file:
-            info = file.read().split("\n")
-            info[7] = color_mode
-            file.truncate()
-            file.seek(0)
-            file.truncate()
-            file.seek(0)
-            file.write("\n".join(info))
-        window.configure(bg=bg)
-        main_label.configure(bg=bg, fg=fg)
-        the_terminal.configure(bg=bg, fg=fg, insertbackground=fg)
+        bg = dark_mode_bg
+        fg = dark_mode_fg
+    for i in range(len(text_boxes)):
+        reset_syntax_colors()
+        text_boxes[i].configure(bg=bg)
+        text_boxes[i].change_color("{}".format(color_mode))
+    with open(folder / "settings.txt", "r+") as file:
+        info = file.read().split("\n")
+        info[7] = color_mode
+        file.truncate()
+        file.seek(0)
+        file.truncate()
+        file.seek(0)
+        file.write("\n".join(info))
+    window.configure(bg=bg)
+    main_label.configure(bg=bg, fg=fg)
+    the_terminal.configure(bg=bg, fg=fg, insertbackground=fg)
 color_mode_img = PhotoImage(file=(folder / "color_mode.png"))
 change_color_mode_button = Button(commands_sidebar, image=color_mode_img, font=("Courier New bold", 20), command=change_color_mode, width=25, highlightbackground="#4e524f")
-change_color_mode_button.place(relx=.5, rely=.77, anchor=CENTER)
+change_color_mode_button.place(relx=.5, rely=.7364, anchor=CENTER)
 ToolTip(change_color_mode_button, text="Change Color Mode", window=window)
+def show_extension(extension_name):
+    base_name = extension_name
+    extension_name = (folder / "extensions/{}.xt".format(extension_name))
+    extension_path = str(folder / extension_name)
+    details = open_extension(extension_path)
+    create_new_tab()
+    current_focus = main_notebook.index("current")
+    main_notebook.tab(text_boxes[current_focus], text="{}".format("Extension: {}".format(base_name)))
+    #Remove everything from the text box
+    text_boxes[current_focus].delete(1.0, END)
+    #Insert the extension details
+    type = details[0]
+    accesses = details[1]
+    name = details[2]
+    description = details[3]
+    author = details[4]
+    keywords = details[5]
+    the_settings = details[6]
+    the_theme = details[7]
+    text_boxes[current_focus].insert(1.0, "Extension Name: {}\nExtension Type: {}\nExtension Accesses: {}\nExtension Description: {}\nExtension Author: {}\nExtension Keywords: {}\n\nExtension Settings: {}\n\nExtension Theme: {}".format(name, type, accesses, description, author, keywords, the_settings, the_theme))
+    text_boxes[current_focus].redraw()
+    text_boxes[current_focus].text.focus()
+show_extension_img = PhotoImage(file=(folder / "extensions.png"))
+show_extension_button = Button(commands_sidebar, image=show_extension_img, font=("Courier New bold", 20), command= lambda: extension_page(window, color_mode="light", x=window.winfo_x(), y=window.winfo_y(), function=show_extension), width=25, highlightbackground="#4e524f")
+show_extension_button.place(relx=.5, rely=.789, anchor=CENTER)
+ToolTip(show_extension_button, text="Open Extensions", window=window)
 def report_a_bug(event=None):
-    report_bug(color_mode = color_mode)
+    report_bug(color_mode = color_mode, x=window.winfo_x(), y=window.winfo_y())
 report_bug_img = PhotoImage(file=(folder / "report_bug.png"))
 report_a_bug_button = Button(commands_sidebar, image=report_bug_img, font=("Courier New bold", 20), command=report_a_bug, width=25, highlightbackground="#4e524f")
-report_a_bug_button.place(relx=.5, rely=.825, anchor=CENTER)
+report_a_bug_button.place(relx=.5, rely=.8416, anchor=CENTER)
 ToolTip(report_a_bug_button, text="Report A Bug", window=window)
 def run_file(event=None):
     if event != None:
@@ -358,8 +384,8 @@ def run_file(event=None):
                 the_terminal.run_command("python3 {}".format(path))
             else:
                 showerror("Runtime Error", "Runtime Error\n\nFile Type Incompatible. File Could Not Be Run")
-run_button = Button(commands_sidebar, image=run_img, font=("Courier New bold", 25), command=run_file, width=25, height=25, highlightbackground="#5a8276")
-run_button.place(relx=.5, rely=.055, anchor=CENTER)
+run_button = Button(commands_sidebar, image=run_img, font=("Courier New bold", 25), command=run_file, width=25, height=25, highlightbackground="#4e524f")
+run_button.place(relx=.5, rely=.0526, anchor=CENTER)
 run_button.configure(highlightbackground="#4e524f")
 ToolTip(run_button, text="Runs File", window=window)
 window.bind("<Command-r>", run_file)
@@ -368,12 +394,12 @@ def window_destroy(event=None):
     window.destroy()
 window.bind("<Command-w>", close_tab)
 settings_img = PhotoImage(file=(folder / "settings.png"))
-settings_button = Button(commands_sidebar, image=settings_img, font=("Courier New bold", 20), command= lambda: settings(color_mode=color_mode), width=25, highlightbackground="#4e524f")
-settings_button.place(relx=.5, rely=.88, anchor=CENTER)
+settings_button = Button(commands_sidebar, image=settings_img, font=("Courier New bold", 20), command= lambda: settings(color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), window=window), width=25, highlightbackground="#4e524f")
+settings_button.place(relx=.5, rely=.8942, anchor=CENTER)
 ToolTip(settings_button, text="Settings", window=window)
 quit_img = PhotoImage(file=(folder / "quit.png"))
 quit_button = Button(commands_sidebar, image=quit_img, font=("Courier New bold", 15), width=25, highlightbackground="#4e524f", command=window_destroy)
-quit_button.place(relx=.5, rely=.935, anchor=CENTER)
+quit_button.place(relx=.5, rely=.9468, anchor=CENTER)
 ToolTip(quit_button, text="Quit", window=window)
 menubar = Menu(window)
 app_menu = Menu(menubar, name="apple")
@@ -408,11 +434,11 @@ template_menu.add_command(label="Delete Template", command=delete_template)
 run_menu = Menu(menubar, tearoff=False)
 menubar.add_cascade(menu=run_menu, label="Run")
 run_menu.add_command(label="Run File", command=run_file, accelerator="Command+r")
-window.createcommand('::tk::mac::ShowPreferences', lambda: settings(color_mode=color_mode))
+window.createcommand('::tk::mac::ShowPreferences', lambda: settings(color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y()))
 window.config(menu=menubar)
 help_menu = Menu(menubar, tearoff=False)
 menubar.add_cascade(menu=help_menu, label="Help")
-help_menu.add_command(label= "Shortcuts", command= lambda: shortcuts_page(color_mode = color_mode))
+help_menu.add_command(label= "Shortcuts", command= lambda: shortcuts_page(color_mode = color_mode, x=window.winfo_x(), y=window.winfo_y()))
 def open_python_docs():
     webbrowser.open("https://docs.python.org/3/library/")
 def help(event=None):
@@ -422,7 +448,7 @@ def help(event=None):
     edited_line = line_contents[current_insert:] + line_contents[:current_insert-1]
     text_boxes[current_focus].delete("insert linestart", "insert lineend")
     text_boxes[current_focus].insert("insert linestart", edited_line)
-    help_info(color_mode = color_mode)
+    help_info(color_mode = color_mode, x=window.winfo_x(), y=window.winfo_y())
 window.bind("<F1>", help)
 def open_github():
     webbrowser.open("https://github.com/")
