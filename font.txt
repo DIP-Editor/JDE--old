@@ -2,3 +2,5 @@ Courier New bold
 15
 20
 35
+10
+30

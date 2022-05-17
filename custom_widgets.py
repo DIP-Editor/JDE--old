@@ -9,6 +9,7 @@ import os
 import idlelib.colorizer as ic
 import idlelib.percolator as ip
 import smtplib
+from itertools import groupby
 import re
 from os import listdir
 import sys
@@ -18,8 +19,8 @@ if getattr(sys, "frozen", False):
     folder = Path(sys._MEIPASS)
 else:
     folder = Path(__file__).parent
-#Get color theme from file
-theme_style = open("color_theme.txt", "r").readlines()
+#Get theme from file
+theme_style = open(folder / "color_theme.txt", "r").readlines()
 light_mode_style = theme_style[0].split(";")
 light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
 light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
@@ -27,11 +28,13 @@ dark_mode_style = theme_style[1].split(";")
 dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
 dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
 #Get Font from file
-font_style = open("font.txt", "r").readlines()
+font_style = open(folder / "font.txt", "r").readlines()
 font_name = font_style[0].split("\n")[0]
 normal_size = int(font_style[1].split("\n")[0])
 medium_size = int(font_style[2].split("\n")[0])
 large_size = int(font_style[3].split("\n")[0])
+min = font_style[4].split("\n")[0]
+max = font_style[5].split("\n")[0]
 normal_font = (font_name, normal_size)
 medium_font = (font_name, medium_size)
 large_font = (font_name, large_size)
@@ -40,7 +43,7 @@ with open(folder / "keywords.txt", "r") as f:
     keywords_list = f.read().splitlines()
 #Create function to update keywords file and list
 def update_list():
-    with open("keywords.txt", "r+") as f:
+    with open(folder / "keywords.txt", "r+") as f:
         f.truncate()
         f.seek(0)
         f.truncate()
@@ -106,12 +109,14 @@ class ultra_text(Frame):
         self.cdg.tagdefs["DEFINITION"] = {"foreground": tag_definition, "background": bg}
         self.cdg.tagdefs["CLASS"] = {"foreground": tag_class, "background": bg}
 
+        self.text_font = (font_name, normal_size)
+
         #Create base text widget
         if "height" and "width" in kwargs:
-            self.text = Text(self, height=kwargs["height"], width=kwargs["width"], borderwidth=2, relief=RIDGE, wrap=NONE, undo=True, font=normal_font)
+            self.text = Text(self, height=kwargs["height"], width=kwargs["width"], borderwidth=2, relief=RIDGE, wrap=NONE, undo=True, font=self.text_font)
         else:
             #, width=130, height=29
-            self.text = Text(self, font=normal_font, wrap="none", undo=True, borderwidth=2, relief=RIDGE, width=95, height=25)
+            self.text = Text(self, font=self.text_font, wrap="none", undo=True, borderwidth=2, relief=RIDGE, width=95, height=25)
         #Check if syntax highlighting is needed
         if self.have_syntax == True:
             ip.Percolator(self.text).insertfilter(self.cdg)
@@ -131,12 +136,15 @@ class ultra_text(Frame):
 
         #Create bindings
         self.window.bind("<Any>", self.redraw())
-        self.window.bind("<BackSpace>", lambda x: self.after(10, (self.redraw())), add=True)
+        self.window.bind("<BackSpace>", lambda x: self.after(1, (self.redraw())), add=True)
         self.text.bind("<Key>", self.onPressDelay)
         self.text.bind("<Button-1>", self.numberLines.redraw)
         self.scrollbar.bind("<Button-1>", self.onScrollPress)
         self.text.bind("<MouseWheel>", self.onPressDelay)
-        self.text.bind("<Any-KeyRelease>", self._autocomplete)
+        self.text.bind("<Any-KeyRelease>", self._autocomplete, add=True)
+        self.text.bind("<Any-KeyRelease>", self.parse_line, add=True)
+        self.window.bind("<Button-1>", self.parse_line, add=True)
+        self.text.bind("<BackSpace>", self.parse_text, add=True)
         self.text.bind("<Tab>", self._handle_tab, add=True)
         self.text.bind("\"", self.double_quotes)
         self.text.bind("(", self.double_parentheses)
@@ -149,19 +157,30 @@ class ultra_text(Frame):
         self.text.bind("]", self.close_square_braces)
         self.text.bind("<Command-slash>", self.make_comment)
         self.text.bind("<Shift-Tab>", self.back_tab)
-        self.text.bind("<KeyRelease-Return>", lambda x: [self.redraw(), self.new_line_indent(self)], add="+")
+        self.text.bind("<KeyRelease-Return>", lambda x: [self.redraw(), self.new_line_indent(self)], add=True)
         self.text.bind("<Command-Shift-k>", self.delete_line)
         self.text.bind("<Command-b>", self.add_breakpoint)
+        self.text.bind("<Command-=>", self.increase_font)
+        self.text.bind("<Command-Key-minus>", self.decrease_font)
 
         #Create font with 4 spaces
         font = Font(font=self.text["font"])
         tab_width = font.measure("    ")
         self.text.config(tabs=(tab_width))
 
-        # self.temporary_autocomplete_list = []
-        # for i in range(len(keywords_list)):
-        #     self.temporary_autocomplete_list.append(keywords_list[i])
-        # self.window.bind("<Any>", self.parse_text())
+        self.temporary_autocomplete_list = []
+
+    def increase_font(self, event=None):
+        if int(self.text_font[1])+1 < int(max):
+            self.text_font = (self.text_font[0], int(self.text_font[1]) + 1)
+            self.text.config(font=self.text_font)
+            self.numberLines.redraw()
+
+    def decrease_font(self, event=None):
+        if int(self.text_font[1])-1 > int(min):
+            self.text_font = (self.text_font[0], int(self.text_font[1]) - 1)
+            self.text.config(font=self.text_font)
+            self.numberLines.redraw()
 
     def remove_indentation(self, event=None):
         #Print yview
@@ -321,31 +340,39 @@ class ultra_text(Frame):
         self.text.config(bg=bg, fg=fg, insertbackground=fg)
         self.numberLines.config(bg=bg)
 
-    # def special_sort(self, special_list):
-    #     # Group together substrings and overstrings with smaller substrings going to the left and larger substrings/overstrings going to the right
-    #     # Example:
-    #     # ["from", "tkinter", "import", “print”, “printer”, “print_func”, “print_function”]
-    #     # Keep all else in same order
-    #     # What changed?
-    #     # [“print_function”, “printer”, “print”, “print_func”] Became [“print”, “printer”, “print_func”, “print_function”]
-    #     # It is now sorted by the smallest substring going to the left
-    #     # Create a sorting algorithm that will sort the list in the correct order as shown above
-        
-    #     # Create a list of lists
-    #     # Each list will be a group of substrings and overstrings similar to [“print”, “printer”, “print_func”, “print_function”] and the rest of the list will be in the same order as the original list
-    #     # Example:
-    #     # [[“print”, “printer”, “print_func”, “print_function”], [“from”, “tkinter”, “import”]]
-    #     return special_list
+    def squeeze(self, s):
+        return re.sub(r'(.)\1+', r'\1', s)
+
+    def special_sort(self, special_list):
+        for i in range(len(special_list)):
+            for j in range(len(special_list)):
+                if special_list[i] in special_list[j]:
+                    #Bring in front of j
+                    special_list.insert(j, special_list.pop(i))
+            return special_list
 
     def callback(self, word):
         #Returns possible matches
-        #words is a list of almost every keyword and builtin function
-        words = keywords_list 
-        #+ self.temporary_autocomplete_list
         #Remove duplicates without changing order
-        # words = list(dict.fromkeys(words))
+        self.temporary_autocomplete_list = list(dict.fromkeys(self.temporary_autocomplete_list))
+        #Remove old variables
+        self.check_in_file()
+        #words is a list of almost every keyword and builtin function
+        words = keywords_list + self.temporary_autocomplete_list
+        #Remove duplicates without changing order
+        words = list(dict.fromkeys(words))
+        #Sort and squeeze
+        words = [s for _, g in groupby(words, self.squeeze) for s in sorted(g, key=len)]
         #Sort using special_sort
-        # words = self.special_sort(words)
+        last_sort = self.special_sort(words)
+        while True:
+            sort = self.special_sort(last_sort)
+            if sort == last_sort:
+                break
+            else:
+                last_sort = sort
+        #Make words the sorted list
+        words = last_sort
         matches = [x for x in words if x.startswith(word)]
         return matches
 
@@ -362,7 +389,7 @@ class ultra_text(Frame):
             return "break"
 
     def _autocomplete(self, event):
-        #Autocompletes the current word
+        #Autocompletes the current word 
         if event.char and self.callback and event.keysym != "BackSpace":
             word = self.text.get("insert-1c wordstart", "insert-1c wordend")
             matches = self.callback(word)
@@ -372,60 +399,67 @@ class ultra_text(Frame):
                 self.text.insert(insert, remainder, ("sel", "autocomplete"))
                 self.text.mark_set("insert", insert)
 
-    # def parse_text(self):
-    #     lines = self.text.get("1.0", "end")
-    #     lines = lines.split("\n")
-    #     print(lines)
-    #     print(self.temporary_autocomplete_list)
-    #     for line in lines:
-    #         self.parse_line(line)
-    #         # print(self.temporary_autocomplete_list)
-    #     self.callback("")
-    #     print(self.temporary_autocomplete_list)
+    def parse_line(self, event=None, line=None):
+        if line is None:
+            current_line = int(self.text.index("insert").split(".")[0])
+            current_line_contents = self.text.get("{}.0".format(current_line-1), "{}.end".format(current_line-1))
+        else:
+            current_line_contents = line
+        #Parse the line to get variables and functions so they can be added to the temporary_autocomplete_list
+        #This is done to avoid autocompleteing variables and functions that are not in other files
+        #Get the contents of the last line
+        #Check if the current line is a variable or a function or a class or a module or none of the above
+        if "=" or "def" or "class" or "module" in current_line_contents:
+            if "=" in current_line_contents:
+                #Get the variable name
+                variable_name = current_line_contents.split("=")[0].strip()
+                #Add the variable name to the list of important things
+                self.temporary_autocomplete_list.append(variable_name)
+            elif current_line_contents.startswith("def"):
+                #Get the function name
+                function_name = current_line_contents.split("(")[0].split("def")[1].strip()
+                #Add the function name to the list of important things
+                self.temporary_autocomplete_list.append(function_name)
+            elif current_line_contents.startswith("class"):
+                #Get the class name
+                class_name = current_line_contents.split(":")[0].split("class")[1].strip()
+                #Check if the class is a subclass of another class
+                if "(" in class_name:
+                    #Get the superclass name
+                    superclass_name = class_name.split("(")[0].strip()
+                    #Add the superclass name to the list of important things
+                    self.temporary_autocomplete_list.append(superclass_name)
+                #Add the class name to the list of important things
+                self.temporary_autocomplete_list.append(class_name)
+            elif current_line_contents.startswith("import") or current_line_contents.startswith("from"):
+                if "from" in current_line_contents:
+                    #Get the module name
+                    module_name = current_line_contents.split("import")[0].split("from")[1].split(".")[0].strip()
+                    #Add the module name to the list of important things
+                    self.temporary_autocomplete_list.append(module_name)
+                else:
+                    #Get the module name
+                    module_name = current_line_contents.split("import")[1].split(".")[0].strip()
+                    #Add the module name to the list of important things
+                    self.temporary_autocomplete_list.append(module_name)
 
-    # def parse_line(self, line):
-    #     #Parse the line to get variables and functions so they can be added to the temporary_autocomplete_list
-    #     #This is done to avoid autocompleteing variables and functions that are not in other files
-    #     #Get the current line contents
-    #     current_line_contents = line
-    #     current_line_importants = []
-    #     #Check if the current line is a variable or a function or a class or a module or none of the above
-    #     if current_line_contents.startswith("def"):
-    #         #Get the function name
-    #         function_name = current_line_contents.split("(")[0].split("def")[1].strip()
-    #         #Add the function name to the list of important things
-    #         current_line_importants.append(function_name)
-    #     if current_line_contents.startswith("class"):
-    #         #Get the class name
-    #         class_name = current_line_contents.split(":")[0].split("class")[1].strip()
-    #         #Check if the class is a subclass of another class
-    #         if "(" in class_name:
-    #             #Get the superclass name
-    #             superclass_name = class_name.split("(")[0].strip()
-    #             #Add the superclass name to the list of important things
-    #             current_line_importants.append(superclass_name)
-    #         #Add the class name to the list of important things
-    #         current_line_importants.append(class_name)
-    #     if current_line_contents.startswith("import"):
-    #         #Get the module name
-    #         module_name = current_line_contents.split("import")[1].split("\n")[0].strip()
-    #         #Add the module name to the list of important things
-    #         current_line_importants.append(module_name)
-    #     if "=" in current_line_contents:
-    #         #Get the variable name
-    #         variable_name = current_line_contents.split("=")[0].strip()
-    #         #Add the variable name to the list of important things
-    #         current_line_importants.append(variable_name)
-    #     #Add the current line importants to the end of the temporary_autocomplete_list
-    #     self.temporary_autocomplete_list += current_line_importants
-    #     #Remove duplicates from the temporary_autocomplete_list without changing the order
-    #     self.temporary_autocomplete_list = list(dict.fromkeys(self.temporary_autocomplete_list))
+    def parse_text(self, event=None):
+        contents = self.text.get(1.0, END)
+        for line in contents.split("\n"):
+            self.parse_line(line = line)
+        self.callback("")
+
+    def check_in_file(self, event=None):
+        contents = self.text.get(1.0, END)
+        for item in self.temporary_autocomplete_list:
+            if item not in contents:
+                self.temporary_autocomplete_list.remove(item)
 
     def make_find_and_replace(self, x, y, event=None, **kwargs):
         #Creates a find and replace window
         color_mode = kwargs.pop("color_mode")
         self.search_bar = search_text(self, x=x, y=y, color_mode = color_mode)
-        self.search_bar.attach(self.text)
+        self.search_bar.attach(self.text, self)
         self.search_bar.focus_set()
 
     def open_template(self, x, y, event=None, **kwargs):
@@ -575,7 +609,10 @@ class ultra_text(Frame):
 
     def redraw(self):
         #Redraws the text
-        self.numberLines.redraw()
+        try:
+            self.numberLines.redraw()
+        except:
+            pass
 
 #Create TextLineNumbers class
 class TextLineNumbers(Canvas):
@@ -591,16 +628,19 @@ class TextLineNumbers(Canvas):
     def redraw(self, *args):
         #Redraws the canvas
         """redraw line numbers"""
-        self.delete("all")
+        try:
+            self.delete("all")
 
-        i = self.textwidget.index("@0,0")
-        while True :
-            dline= self.textwidget.dlineinfo(i)
-            if dline is None: break
-            y = dline[1]
-            linenum = str(i).split(".")[0]
-            self.create_text(2, y, anchor="nw", text=linenum, font=normal_font, fill="#2197db") #606366 #90a395 #808090 #14a83c #2893d1 #2197db
-            i = self.textwidget.index("%s+1line" % i)
+            i = self.textwidget.index("@0,0")
+            while True :
+                dline= self.textwidget.dlineinfo(i)
+                if dline is None: break
+                y = dline[1]
+                linenum = str(i).split(".")[0]
+                self.create_text(2, y, anchor="nw", text=linenum, font=normal_font, fill="#2197db") #606366 #90a395 #808090 #14a83c #2893d1 #2197db
+                i = self.textwidget.index("%s+1line" % i)
+        except:
+            pass
 
 #Create find and replace class
 class search_text(Frame):
@@ -620,97 +660,134 @@ class search_text(Frame):
             fg = light_mode_fg
         #Create window
         self.search_text_window = Toplevel(self)
+        self.search_text_window.focus_force()
         self.search_text_window.title("Search / Find and Replace")
         self.search_text_window.config(bg=bg)
         self.search_text_window.geometry("+{}+{}".format(self.x, self.y))
         self.search_text_window.attributes("-topmost", True)
         #Create widgets
         self.text_search_entry = Entry(self.search_text_window, borderwidth=3, font=normal_font, relief=SUNKEN)
-        self.search_button = Button(self.search_text_window, text="Search File", font=normal_font, command=self.find)
+        self.search_button = Button(self.search_text_window, text="Search File", font=normal_font, command=self.test_find)
         self.text_replace_entry = Entry(self.search_text_window, borderwidth=3, font=normal_font, relief=SUNKEN)
-        self.replace_button = Button(self.search_text_window, text="Replace", font=normal_font, command=self.find_and_replace)
+        self.replace_button = Button(self.search_text_window, text="Replace", font=normal_font, command=self.test_replace)
+        self.replace_all_button = Button(self.search_text_window, text="Replace All", font=normal_font, command=self.test_replace_all)
         self.search_list = list()
-        self.s = ""
+        self.index = 0
+        self.locations = []
+        self.is_first_search = True
         self.text_search_entry.pack(side=LEFT, fill=BOTH, expand=1)
         self.search_button.pack(side=LEFT)
         self.text_replace_entry.pack(side=LEFT, fill=BOTH, expand=1)
         self.replace_button.pack(side=LEFT)
+        self.replace_all_button.pack(side=LEFT)
         self.text_search_entry.configure(bg=bg, insertbackground = fg, fg=fg)
         self.text_replace_entry.configure(bg=bg, insertbackground = fg, fg=fg)
         self.search_button.configure(highlightbackground=bg)
         self.replace_button.configure(highlightbackground=bg)
+        self.replace_all_button.configure(highlightbackground=bg)
 
-    def attach(self, text):
+    def attach(self, text, widget):
         #Attach the text widget
         self.text = text
+        self.them = widget
 
-    def reset_list(self):
-        #Reset the search list
-        if self.s != self.text_search_entry.get():
-            self.search_list.clear()
-            self.text.tag_remove(SEL, 1.0,"end-1c")
-        
-    def find(self):
-        #Find the text
-        self.reset_list()
-        self.text.focus_set()
-        self.s = self.text_search_entry.get()
+    def search(self, special_string, target):
+        occurences = []
+        string_split = special_string.split("\n")
+        target  = self.text_search_entry.get()
+        if target:
+            for row in range(len(string_split)):
+                for col in range(len(string_split[row])):
+                    if(string_split[row][col] == target[0] and len(string_split[row])-col >= len(target)):
+                        iss = True
+                        index = [str(row+1)+'.'+str(col)]
+                        for i in range(1, len(target)):
+                            if(string_split[row][col+1] != target[i]):
+                                iss = False
+                                break
+                            else:
+                                col = col + 1
+                        if not iss:
+                            continue
+                        else:
+                            index.append(str(row+1)+'.'+str(col+1))
+                            occurences.append(index)
+        return occurences
 
-        if self.s:
-            if self.search_list == []:
-                idx = "1.0"
-            else:
-                idx = self.search_list[-1]
-
-            idx = self.text.search(self.s, idx, nocase=1, stopindex=END)
-            lastidx = "%s+%dc" % (idx, len(self.s))
-
-            try:
-                self.text.tag_remove(SEL, 1.0,lastidx)
-            except:
+    def test_find(self):
+        #Testing new finding method
+        self.locations = []
+        contents = self.text.get("1.0", "end")
+        target = self.text_search_entry.get()
+        if target == "":
+            showwarning("Find and Replace Error", "A Find and Replace Error Has Occured.\n\nPlease Enter A Search Term.")
+        else:
+            self.locations = self.search(contents, target)
+            if self.locations == []:
                 pass
-
-            try:
-                self.text.tag_add(SEL, idx, lastidx)
-                counter_list = []
-                counter_list = str(idx).split(".")      
-                self.text.mark_set("insert", "%d.%d" % (float(int(counter_list[0])), float(int(counter_list[1]))))
-                self.text.see(float(int(counter_list[0])))
-                self.search_list.append(lastidx)
-            except:
-                showinfo("Search Complete","Search Completed\n\nThere Are No Further Matches")
-                self.search_list.clear()
-                self.text.tag_remove(SEL, 1.0,"end-1c")
-
-    def find_and_replace(self):
-        #Replaces the match in the text box with the text in the replace box
-        self.find()
-        self.reset_list()
-        self.text.focus_set()
-        self.s = self.text_search_entry.get()
-        self.r = self.text_replace_entry.get()
-        new_line = ""
-        if self.s:
-            line = self.text.get("insert linestart", "insert lineend")
-            editable_line = str(line)
-            if self.search_list == []:
-                idx = "1.0"
             else:
-                idx = self.search_list[-1]
-            location_of_match = idx.split(".")[1]
-            location_of_match = location_of_match.split("c")[0]
-            location_of_match = location_of_match.split("+")[0]
-            length_of_match = len(str(self.s))
+                if self.is_first_search == True:
+                    self.is_first_search = False
+                else:
+                    self.index += 1
+                if self.index > len(self.locations) - 1:
+                    self.index = 0
+                self.text.tag_remove(SEL, "1.0", "end")
+                self.text.tag_add(SEL, self.locations[self.index][0], self.locations[self.index][1])
+                self.text.mark_set(SEL, self.locations[self.index][1])
+                self.text.see(self.locations[self.index][0])
+                self.them.redraw()
+                
+    def find_no_show(self):
+        self.locations = []
+        contents = self.text.get("1.0", "end")
+        target = self.text_search_entry.get()
+        if target == "":
+            return "No Search Term Entered"
+        else:
+            self.locations = self.search(contents, target)
+            if self.locations == []:
+                pass
+            else:
+                if self.is_first_search == True:
+                    self.is_first_search = False
+                else:
+                    self.index += 1
+                if self.index > len(self.locations) - 1:
+                    self.index = 0
 
-            new_line = editable_line[:int(location_of_match)] + self.r + editable_line[int(location_of_match)+length_of_match:]
-            self.text.delete("insert linestart", "insert lineend")
-            self.text.insert("insert linestart", new_line)
-            self.text.see("insert")
-            self.text.tag_remove(SEL, 1.0,"end-1c")
-            self.text.tag_add(SEL, "insert linestart", "insert lineend")
-            self.text.focus_set()
-            self.text.mark_set("insert", "insert linestart")
-            self.reset_list()
+    def test_replace(self, replacing_all = False):
+        #Test new replace method
+        try:
+            index = self.index
+            works = self.find_no_show()
+            if works == "No Search Term Entered":
+                if replacing_all == False:
+                    showwarning("Find and Replace Error", "A Find and Replace Error Has Occured.\n\nPlease Enter A Search Term")
+            else:
+                self.index = index
+                if self.index > len(self.locations) - 1:
+                    self.index = 0
+                location = self.locations[self.index]
+                self.text.delete(location[0], location[1])
+                self.text.insert(location[0], self.text_replace_entry.get())
+                if replacing_all == False:    
+                    self.text.tag_remove(SEL, "1.0", "end")
+                    self.text.tag_add(SEL, location[0], float(location[0])+(len(self.text_replace_entry.get())/10))
+                    self.text.mark_set(SEL, float(location[0])+(len(self.text_replace_entry.get())/10))
+                    self.text.see(float(location[0])+(len(self.text_replace_entry.get())/10))
+                self.them.redraw()
+        except:
+            if replacing_all == False:
+                showwarning("Find and Replace Error", "A Find and Replace Error Has Occured.\n\nCould Not Replace Desired Text")
+
+    def test_replace_all(self):
+        index = self.index
+        self.find_no_show()
+        self.index = index
+        for i in range(len(self.locations)):
+            self.index = i
+            self.test_replace()
 
 #Create template classes
 class temp_name_pop_up:
@@ -734,13 +811,13 @@ class temp_name_pop_up:
         self.pop_up_window.geometry("300x100+{}+{}".format(self.x, self.y))
         self.pop_up_window.resizable(width=False, height=False)
         self.pop_up_window.focus_force()
+        self.pop_up_window.attributes("-topmost", True)
         self.pop_up_name_label = Label(self.pop_up_window, text="Template Name:", font=normal_font)
         self.pop_up_name_label.place(relx=.5, rely=.1, anchor=CENTER)
         self.pop_up_name_label.configure(bg=bg, fg=fg)
         self.pop_up_name_entry = Entry(self.pop_up_window, font=normal_font, borderwidth=3, relief=SUNKEN)
         self.pop_up_name_entry.place(relx=.5, rely=.4, anchor=CENTER)
         self.pop_up_name_entry.configure(bg=bg, insertbackground = fg, fg=fg)
-        self.pop_up_name_entry.focus_force()
         self.confirm_button = Button(self.pop_up_window, text="Confirm", font=normal_font, command=self.confirm)
         self.confirm_button.place(relx=.125, rely=.85, anchor=CENTER)
         self.confirm_button.configure(highlightbackground=bg)
@@ -786,6 +863,7 @@ class temp_open_pop_up(Frame):
             bg = light_mode_bg
             fg = light_mode_fg
         self.temp_open_pop_up_window = Toplevel()
+        self.temp_open_pop_up_window.focus_force()
         self.temp_open_pop_up_window.title("Template Selection")
         self.temp_open_pop_up_window.config(bg=bg)
         self.temp_open_pop_up_window.geometry("400x300+{}+{}".format(self.x, self.y))
@@ -877,6 +955,7 @@ class temp_destroy_pop_up:
         self.temp_destroy_pop_up_window.geometry("400x300+{}+{}".format(self.x, self.y))
         self.temp_destroy_pop_up_window.resizable(width=False, height=False)
         self.temp_destroy_pop_up_window.focus_force()
+        self.temp_destroy_pop_up_window.attributes("-topmost", True)
         self.templates_start_list = listdir(folder)
         self.templates_list = []
         for file in self.templates_start_list:
@@ -1360,7 +1439,7 @@ class keyword_change_page(Frame):
 
 #Create the extension class
 class extension_page(Frame):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, master, *args, **kwargs):
         #Retrieve the arguments
         self.text_boxes = kwargs.pop("text_boxes")
         self.function = kwargs.pop("function")
@@ -1368,6 +1447,7 @@ class extension_page(Frame):
         self.color_mode = kwargs.pop("color_mode")
         self.x = kwargs.pop("x")
         self.y = kwargs.pop("y")
+        self.window = master
         #Create the frame
         Frame.__init__(self, *args, **kwargs)
         #Create the colors
@@ -1382,6 +1462,7 @@ class extension_page(Frame):
         self.extension_page_window.geometry("+{}+{}".format(self.x, self.y))
         self.extension_page_window.resizable(False, False)
         self.extension_page_window.title("Extensions")
+        self.extension_page_window.attributes("-topmost", True)
         self.extensions_list = []
         #get extensions from extensions folder
         try:
@@ -1390,18 +1471,19 @@ class extension_page(Frame):
                 if file.endswith(".xt"):
                     self.extensions_list.append(str(file).split(".")[0])
             self.extensions_list.sort()
+            self.extension_page_window.configure(bg=bg)
+            #Delete Josh's Choice Bundle from list
+            self.extensions_list.remove("Josh's Choice Bundle")
+            #Set to front
+            self.extensions_list.insert(0, "Josh's Choice Bundle")
             #Put Defualt to front of list
             #Delete Default from list
             self.extensions_list.remove("Default")
             #Set to front
             self.extensions_list.insert(0, "Default")
-            #Delete Josh's Choice Bundle from list
-            self.extensions_list.remove("Josh's Choice Bundle")
-            #Set to front
-            self.extensions_list.insert(0, "Josh's Choice Bundle")
-            self.extension_page_window.configure(background=bg)
+            #Put Defualt to front of list
             self.search_var = StringVar()
-            self.search_var.trace('w', self.update_listbox)
+            self.search_var.trace("w", self.update_listbox)
             self.searchbox = Entry(self.extension_page_window, textvariable=self.search_var, font=normal_font, relief=SUNKEN, borderwidth=3)
             self.searchbox.pack(fill=X, expand=False)
             self.searchbox.config(background=bg, foreground=fg, insertbackground=bg)
@@ -1425,7 +1507,7 @@ class extension_page(Frame):
             showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later")
             self.extension_page_window.destroy()
 
-    def update_listbox(self):
+    def update_listbox(self, *args):
         #Update the listbox
         search_term = self.search_var.get()
         self.extensions_listbox.delete(0, END)
@@ -1437,8 +1519,11 @@ class extension_page(Frame):
         #Inspect the extension
         if self.extensions_listbox.get(ANCHOR) != "":
             extension = self.extensions_listbox.get(ANCHOR)
-            self.function(extension)
-            self.extension_page_window.destroy()
+            try:
+                self.function(extension)
+                self.extension_page_window.destroy()
+            except:
+                showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later")
         else:
             showwarning("Extension Inspection Error", "An Extension Inspection Error Occurred\n\nPlease Select An Extension To Inspect")
 
@@ -1472,11 +1557,13 @@ class extension_page(Frame):
                         settings_file.write(settings)
                     current_mode = settings.split("\n")[-1]
                     if current_mode == "light" and self.color_mode == "light":
-                        pass
+                        self.change_color()
+                        self.change_color()
                     elif current_mode == "light" and self.color_mode == "Dark":
                         self.change_color()
                     elif current_mode == "Dark" and self.color_mode == "Dark":
-                        pass
+                        self.change_color()
+                        self.change_color()
                     elif current_mode == "Dark" and self.color_mode == "light":
                         self.change_color()
                 else:
@@ -1499,13 +1586,17 @@ class extension_page(Frame):
                     med = med.split(": ")[1]
                     large = the_font[3]
                     large = large.split(": ")[1]
-                    string_font = family + "\n" + normal + "\n" + med + "\n" + large
+                    min = the_font[4]
+                    min = min.split(": ")[1]
+                    max = the_font[5]
+                    max = max.split(": ")[1]
+                    string_font = family + "\n" + normal + "\n" + med + "\n" + large + "\n" + min + "\n" + max
                     #Update folder / font.txt
                     with open(folder / "font.txt", "w") as font_file:
                         font_file.write(string_font)
                 for text_box in self.text_boxes:
                     text_box.redraw()
-                showinfo("Extension Applied", "Extension Applied Successfully\n\nThe Extension: \"{}\" has been applied".format(extension))
+                showinfo("Extension Applied", "Extension Applied Successfully\n\nThe Extension: \"{}\" Has Succesfully Been Applied".format(extension))
                 self.extension_page_window.destroy()
             except:
                 showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later")
@@ -1520,6 +1611,6 @@ if __name__ == "__main__":
     width = root.winfo_screenwidth()
     height = root.winfo_screenheight()
     root.geometry("{}x{}+0+0".format(width, height))
-    # root.iconify()
-    # root.deiconify()
+    text = ultra_text(root, window=root, color_mode = "light", have_syntax=True)
+    text.pack(expand=True, fill=BOTH)
     root.mainloop()

@@ -2,7 +2,7 @@
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import filedialog
-from ttkScrollableNotebook import *
+# from ttkScrollableNotebook import *
 from check_version import get_version
 import webbrowser
 from custom_widgets import *
@@ -14,7 +14,8 @@ if getattr(sys, 'frozen', False):
     folder = Path(sys._MEIPASS)
 else:
     folder = Path(__file__).parent
-theme_style = open("color_theme.txt", "r").readlines()
+#Get theme from file
+theme_style = open(folder / "color_theme.txt", "r").readlines()
 light_mode_style = theme_style[0].split(";")
 light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
 light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
@@ -22,7 +23,7 @@ dark_mode_style = theme_style[1].split(";")
 dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
 dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
 #Get Font from file
-font_style = open("font.txt", "r").readlines()
+font_style = open(folder / "font.txt", "r").readlines()
 font_name = font_style[0].split("\n")[0]
 normal_size = int(font_style[1].split("\n")[0])
 medium_size = int(font_style[2].split("\n")[0])
@@ -32,6 +33,7 @@ medium_font = (font_name, medium_size)
 large_font = (font_name, large_size)
 path_list = []
 have_syntax_list = []
+contents_list = []
 window = Tk()
 current_version = "0.0.7"
 try:
@@ -71,17 +73,22 @@ run_img = PhotoImage(file=str(folder / "run.png"))
 s = Style(window)
 s.theme_use("clam")
 def about():
-    showinfo("JDE", "JDE is an IDE for Python\n\nCreated by: Joshua R. Yacktman\nBeta Version: {}".format(current_version))
+    showinfo("JDE", "JDE is an IDE for Python\n\nCreated by: Joshua R. Yacktman\nBeta Version: {}".format(current_version), parent=window)
 window.title("Josh's Development Environment")
 main_label = Label(window, text="Josh's Development Environment", font=large_font)
 main_label.place(relx=0.525, y=30, anchor=CENTER)
-main_notebook = Notebook(window)
-main_notebook.place(relx=.525, rely=.4, anchor=CENTER)
+notebook_frame = Frame(window, width=932, height=497)
+notebook_frame.place(relx=.525, rely=.4, anchor=CENTER)
+notebook_frame.pack_propagate(False)
+main_notebook = Notebook(notebook_frame)
+# main_notebook.place(relx=.525, rely=.4, anchor=CENTER)
+main_notebook.pack(fill=BOTH, expand=True)
 text_boxes = []
 main_text_box = ultra_text(window, window=window, color_mode = color_mode, have_syntax=True)
 have_syntax_list.append(True)
 text_boxes.append(main_text_box)
 path_list.append("")
+contents_list.append("#  .----------------.  .----------------.  .----------------. \n# | .--------------. || .--------------. || .--------------. |\n# | |     _____    | || |  ________    | || |  _________   | |\n# | |    |_   _|   | || | |_   ___ `.  | || | |_   ___  |  | |\n# | |      | |     | || |   | |   `. \ | || |   | |_  \_|  | |\n# | |   _  | |     | || |   | |    | | | || |   |  _|  _   | |\n# | |  | |_' |     | || |  _| |___.' / | || |  _| |___/ |  | |\n# | |  `.___.'     | || | |________.'  | || | |_________|  | |\n# | |              | || |              | || |              | |\n# | '--------------' || '--------------' || '--------------' |\n#  '----------------'  '----------------'  '----------------' \n\n# Welcome to Josh's Development Environment!")
 main_notebook.add(main_text_box)
 current_focus = main_notebook.index("current")
 main_notebook.tab(text_boxes[current_focus], text="Untitled.py")
@@ -96,10 +103,10 @@ commands_sidebar = Frame(window, bg="#e0dcd4", width=50)
 commands_sidebar.pack(side=LEFT, fill=Y)
 filetypes = (("Python Files", "*.py"), ("Text Files", "*.txt"))
 def open_file(event=None):
-    file_contents = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes)
+    file_contents = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes, parent=window)
     window.focus_force()
     if file_contents == "":
-        showwarning("File Opening Error", "An Error Occurred While Opening File\n\nNo File Was Selected") 
+        showwarning("File Opening Error", "An Error Occurred While Opening File\n\nNo File Was Selected", parent=window)
     else:
         #Check if file is a txt file
         if file_contents.split(".")[-1] == "txt":
@@ -121,7 +128,9 @@ def open_file(event=None):
             change_color_mode()
         text_boxes[current_focus].delete(1.0, END)
         actual_contents = (open(file_contents, "r")).read()
+        contents_list.append(actual_contents)
         text_boxes[current_focus].insert(1.0, actual_contents)
+        text_boxes[current_focus].parse_text()
         #Check if last line is empty or a newline
         # last_line = text_boxes[current_focus].get("end-1l", END)
         # if last_line == "\n" or last_line == "":
@@ -138,11 +147,12 @@ open_button = Button(commands_sidebar, image=open_img, font=medium_font, command
 open_button.place(relx=.5, rely=.1052, anchor=CENTER)
 ToolTip(open_button, text="Open File", window=window)
 window.bind("<Command-o>", open_file)
-def create_new_tab(event=None, have_syntax=True):
+def create_new_tab(event=None, have_syntax=True, extension=False):
     main_text_box = ultra_text(window, window=window, color_mode = color_mode, have_syntax=have_syntax)
     have_syntax_list.append(have_syntax)
     text_boxes.append(main_text_box)
     path_list.append("")
+    contents_list.append("#  .----------------.  .----------------.  .----------------. \n# | .--------------. || .--------------. || .--------------. |\n# | |     _____    | || |  ________    | || |  _________   | |\n# | |    |_   _|   | || | |_   ___ `.  | || | |_   ___  |  | |\n# | |      | |     | || |   | |   `. \ | || |   | |_  \_|  | |\n# | |   _  | |     | || |   | |    | | | || |   |  _|  _   | |\n# | |  | |_' |     | || |  _| |___.' / | || |  _| |___/ |  | |\n# | |  `.___.'     | || | |________.'  | || | |_________|  | |\n# | |              | || |              | || |              | |\n# | '--------------' || '--------------' || '--------------' |\n#  '----------------'  '----------------'  '----------------' \n\n# Welcome to Josh's Development Environment!")
     main_notebook.add(main_text_box)
     current_focus = main_notebook.index("current")
     main_notebook.select(main_notebook.index(END)-1)
@@ -158,15 +168,24 @@ window.bind("<Command-t>", create_new_tab)
 def close_tab(event=None):
     if len(main_notebook.tabs()) > 1:
         current_focus = main_notebook.index("current")
+        if contents_list[current_focus] != text_boxes[current_focus].text.get(1.0, "end-1c"):
+            # print difference
+            ask_save = askyesno("Save File", "Save File Before Closing\n\nWould You Like To Save This File Before Closing?", parent=window)
+            if ask_save == True:
+                save_file()
         text_boxes.pop(current_focus)
         path_list.pop(current_focus)
+        contents_list.pop(current_focus)
         main_notebook.forget(current_focus)
     else:
-        showwarning("Tab Removal Error", "A Tab Removal Error Has Occured\n\nMust Have More Than One Tab To Remove Tabs")
-def save_file(event=None):
-    current_focus = main_notebook.index(CURRENT)
+        showwarning("Tab Removal Error", "A Tab Removal Error Has Occured\n\nMust Have More Than One Tab To Remove Tabs", parent=window)
+def save_file(event=None, text_index=None):
+    if text_index == None:
+        current_focus = main_notebook.index(CURRENT)
+    else:
+        current_focus = text_index
     if path_list[current_focus] == "":
-        save_as_file()
+        save_as_file(text_index=current_focus)
     else:
         path = path_list[current_focus]
         open(path, "r+").truncate()
@@ -175,20 +194,30 @@ def save_file(event=None):
         open(path, "r+").seek(0)
         contents = text_boxes[current_focus].get(1.0, END)
         open(path, "r+").write(contents)
+        contents_list[current_focus] = contents
+def save_all():
+    for i in range(len(text_boxes)):
+        if path_list[i] == "":
+            save_as_file(text_index=i)
+        else:
+            save_file(text_index=i)
 save_img = PhotoImage(file=str(folder / "save.png"))
 save_button = Button(commands_sidebar, image=save_img, font=medium_font, command=save_file, width=25, highlightbackground="#4e524f")
 save_button.place(relx=.5, rely=.1578, anchor=CENTER)
 ToolTip(save_button, text="Save", window=window)
 window.bind("<Command-s>", save_file)
-def save_as_file():
+def save_as_file(text_index=None):
     window.focus_force()
-    new_path = filedialog.asksaveasfilename(initialfile = "Untitled.py", filetypes=filetypes)
+    new_path = filedialog.asksaveasfilename(initialfile = "Untitled.py", filetypes=filetypes, parent=window)
     main_text_box.focus()
     if new_path == "":
         pass
     else:
-        with open(new_path, "w") as file:
+        if text_index == None:
             current_focus = main_notebook.index("current")
+        else:
+            current_focus = text_index
+        with open(new_path, "w") as file:
             contents = text_boxes[current_focus].get(1.0, END)
             file.write(contents)
         current_focus = main_notebook.index("current")
@@ -396,6 +425,7 @@ def show_extension(extension_name):
     text_boxes[current_focus].text.image_create(1.0, image=show_extension_img)
     text_boxes[current_focus].redraw()
     text_boxes[current_focus].text.configure(state=DISABLED)
+    contents_list[current_focus] = text_boxes[current_focus].text.get(1.0, END)
 show_extension_img = PhotoImage(file=(folder / "extensions.png"))
 show_extension_button = Button(commands_sidebar, image=show_extension_img, font=medium_font, command= lambda: extension_page(window, color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), function=show_extension, change_color=change_color_mode, text_boxes = text_boxes), width=25, highlightbackground="#4e524f")
 show_extension_button.place(relx=.5, rely=.789, anchor=CENTER)
@@ -419,7 +449,7 @@ def run_file(event=None):
         current_focus = main_notebook.index("current")
         path = path_list[current_focus]
         if path == "":
-            showwarning("Runtime Error", "Can Not Run File\n\nNo File Has Been Selected Or Opened")
+            showwarning("Runtime Error", "Can Not Run File\n\nNo File Has Been Selected Or Opened", parent=window)
         else:
             save_file()
             file_type = path.split(".")
@@ -427,23 +457,39 @@ def run_file(event=None):
             if file_type == "py":
                 the_terminal.run_command("python3 {}".format(path))
             else:
-                showwarning("Runtime Error", "Runtime Error\n\nFile Type Incompatible. File Could Not Be Run")
+                showwarning("Runtime Error", "Runtime Error\n\nFile Type Incompatible. File Could Not Be Run", parent=window)
 run_button = Button(commands_sidebar, image=run_img, font=medium_font, command=run_file, width=25, height=25, highlightbackground="#4e524f")
 run_button.place(relx=.5, rely=.0526, anchor=CENTER)
 run_button.configure(highlightbackground="#4e524f")
 ToolTip(run_button, text="Runs File", window=window)
 window.bind("<Command-r>", run_file)
 window.bind("<F5>", run_file)
-def window_destroy(event=None):
-    window.destroy()
 window.bind("<Command-w>", close_tab)
 settings_img = PhotoImage(file=(folder / "settings.png"))
 settings_button = Button(commands_sidebar, image=settings_img, font=medium_font, command= lambda: settings(color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), window=window), width=25, highlightbackground="#4e524f")
 settings_button.place(relx=.5, rely=.8942, anchor=CENTER)
 ToolTip(settings_button, text="Settings", window=window)
+def close():
+    current_contents = []
+    for i in range(len(text_boxes)):
+        name = main_notebook.tab(i)["text"]
+        if name.startswith("Extension: "):
+            if (".py" not in name) and (".txt" not in name):
+                current_contents.append(contents_list[i])
+            else:
+                current_contents.append(text_boxes[i].get("1.0", "end-1c"))
+        else:
+            current_contents.append(text_boxes[i].get("1.0", "end-1c"))
+    for i in range(len(current_contents)):
+        if current_contents[i] != contents_list[i]:
+            save_no_save = askquestion("Save Files", "Save Files Before Closing\n\nDo You Want To Save All Files Before Closing?", parent=window)
+            if save_no_save == "yes":
+                save_all()
+    window.destroy()
 quit_img = PhotoImage(file=(folder / "quit.png"))
-quit_button = Button(commands_sidebar, image=quit_img, font=normal_font, width=25, highlightbackground="#4e524f", command=window_destroy)
+quit_button = Button(commands_sidebar, image=quit_img, font=normal_font, width=25, highlightbackground="#4e524f", command=close)
 quit_button.place(relx=.5, rely=.9468, anchor=CENTER)
+window.protocol("WM_DELETE_WINDOW", close)
 ToolTip(quit_button, text="Quit", window=window)
 menubar = Menu(window)
 app_menu = Menu(menubar, name="apple")
