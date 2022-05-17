@@ -168,15 +168,22 @@ window.bind("<Command-t>", create_new_tab)
 def close_tab(event=None):
     if len(main_notebook.tabs()) > 1:
         current_focus = main_notebook.index("current")
-        if contents_list[current_focus] != text_boxes[current_focus].text.get(1.0, "end-1c"):
-            # print difference
-            ask_save = askyesno("Save File", "Save File Before Closing\n\nWould You Like To Save This File Before Closing?", parent=window)
-            if ask_save == True:
-                save_file()
-        text_boxes.pop(current_focus)
-        path_list.pop(current_focus)
-        contents_list.pop(current_focus)
-        main_notebook.forget(current_focus)
+        name = main_notebook.tab(current_focus)["text"]
+        if name.startswith("Extension") and (".py" not in name) and (".txt" not in name):
+            text_boxes.pop(current_focus)
+            path_list.pop(current_focus)
+            contents_list.pop(current_focus)
+            main_notebook.forget(current_focus)
+        else:
+            if contents_list[current_focus] != text_boxes[current_focus].text.get(1.0, "end-1c"):
+                # print difference
+                ask_save = askyesno("Save File", "Save File Before Closing\n\nWould You Like To Save This File Before Closing?", parent=window)
+                if ask_save == True:
+                    save_file()
+            text_boxes.pop(current_focus)
+            path_list.pop(current_focus)
+            contents_list.pop(current_focus)
+            main_notebook.forget(current_focus)
     else:
         showwarning("Tab Removal Error", "A Tab Removal Error Has Occured\n\nMust Have More Than One Tab To Remove Tabs", parent=window)
 def save_file(event=None, text_index=None):
