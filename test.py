@@ -1,28 +1,28 @@
 
-from tkinter import *
-from custom_widgets import *
+# from tkinter import *
+# from custom_widgets import *
 
-root = Tk()
-root.geometry("500x500")
-font = Font(family="Courier New bold", size=15)
+# root = Tk()
+# root.geometry("500x500")
+# font = Font(family="Courier New bold", size=15)
 
-def zoom(new_size):
-    new_size = int(new_size)
-    global size
-    if new_size < 25 and new_size > 13:
-        font.configure(size=new_size)
-        size = new_size
+# def zoom(new_size):
+#     new_size = int(new_size)
+#     global size
+#     if new_size < 25 and new_size > 13:
+#         font.configure(size=new_size)
+#         size = new_size
 
-text = Text(root, font=font)
+# text = Text(root, font=font)
 
-text.pack(side="left", fill="both", expand=True)
+# text.pack(side="left", fill="both", expand=True)
 
-size = 15
+# size = 15
 
-root.bind("<Command-=>", lambda event: zoom(int(size)+1))
-root.bind("<Command-Key-minus>", lambda event: zoom(int(size)-1))
+# root.bind("<Command-=>", lambda event: zoom(int(size)+1))
+# root.bind("<Command-Key-minus>", lambda event: zoom(int(size)-1))
 
-root.mainloop()
+# root.mainloop()
 
 
 # import tkinter as tk
@@ -273,3 +273,181 @@ root.mainloop()
 #     window = Tk()
 #     FlowChart(color_mode="Dark", x=100, y=100).pack(fill=BOTH, expand=True)
 #     window.mainloop()
+
+
+# from tkinter import *
+# root=Tk()
+# root.geometry("500x400+200+100")
+
+# class Menu_Entry(Entry):
+#     def __init__(self,perant,*args,**kwargs):
+#         Entry.__init__(self,perant,*args,**kwargs)
+#         self.popup_menu=Menu(self,tearoff=0,background='#1c1b1a',fg='white',
+#                                      activebackground='#534c5c',
+#                              activeforeground='Yellow')
+#         self.popup_menu.add_command(label="Cut                     ",command=self.Cut,
+#                                     accelerator='Ctrl+V')
+#         self.popup_menu.add_command(label="Copy                    ",command=self.Copy,compound=LEFT,
+#                                     accelerator='Ctrl+C')
+    
+#         self.popup_menu.add_command(label="Paste                   ",command=self.Paste,accelerator='Ctrl+V')
+#         self.popup_menu.add_separator()
+#         self.popup_menu.add_command(label="Select all",command=self.select_all,accelerator="Ctrl+A")
+#         self.popup_menu.add_command(label="Delete",command=self.delete_only,accelerator=" Delete")
+#         self.popup_menu.add_command(label="Delete all",command=self.delete_selected,accelerator="Ctrl+D")
+#         self.bind('<Button-2>',self.popup)
+#         self.bind("<Control-d>",self.delete_selected_with_e1)
+#         self.bind('<App>',self.popup)
+#         self.context_menu = Menu(self, tearoff=0)
+#         self.context_menu.add_command(label="Cut")
+#         self.context_menu.add_command(label="Copy")
+#         self.context_menu.add_command(label="Paste")
+         
+#     def popup(self, event):
+#       try:
+#         self.popup_menu.tk_popup(event.x_root, event.y_root, 0)
+#       finally:
+#         self.popup_menu.grab_release()
+
+#     def Copy(self):
+#       self.event_generate('<<Copy>>')
+
+#     def Paste(self):
+#       self.event_generate('<<Paste>>')
+
+#     def Cut(self):
+#       self.event_generate('<<Cut>>')
+
+#     def delete_selected_with_e1(self,event):
+#       self.select_range(0, END)
+#       self.focus()
+#       self.event_generate("<Delete>")
+
+#     def delete_selected(self):
+#       self.select_range(0, END)
+#       self.focus()
+#       self.event_generate("<Delete>")
+
+#     def delete_only(self):
+#       self.event_generate("<BackSpace>")
+
+#     def select_all(self):
+#       self.select_range(0, END)
+#       self.focus()
+
+
+
+# ent=Menu_Entry(root)
+# ent.pack()
+
+# root.mainloop()
+
+
+# from tkinter import *
+# root=Tk()
+# root.iconify()
+# root.geometry("500x400+200+100")
+# root.deiconify()
+# root.mainloop()
+
+# from tkinter import *
+# from tkinter.ttk import *
+# root = Tk()
+# s = Style()
+# s.theme_use('clam')
+# p = Progressbar(root, orient=HORIZONTAL, length=200, mode='indeterminate')
+# p.pack(expand=True, fill=BOTH)
+# p.start()
+# root.mainloop()
+
+# import sys
+
+# import tkinter
+# import tkinter.scrolledtext
+
+
+# class Application:
+#     def __init__(self):
+#         # Create UI
+#         self.window = tkinter.Tk()
+#         self.window.geometry('800x600')
+#         self.window.title("Tk-based event logger")
+
+#         self.text_view = tkinter.scrolledtext.ScrolledText()
+#         self.text_view.pack(fill=tkinter.BOTH, expand=1)
+#         self.text_view.configure(state='disabled')
+
+#         # Register event handlers
+#         # See https://tcl.tk/man/tcl/TkCmd/tk_mac.html for list of
+#         # macOS-specific commands
+#         self.window.createcommand("::tk::mac::OpenDocument", self.open_document_handler)
+#         self.window.createcommand("::tk::mac::LaunchURL", self.open_url_handler)  # works with Tcl/Tk >= 8.6.10
+
+#     def append_message(self, msg):
+#         """Append message to text view."""
+#         self.text_view.configure(state='normal')
+#         self.text_view.insert('end', msg + '\n')
+#         self.text_view.configure(state='disabled')
+
+#     def run(self):
+#         """Run the main loop."""
+#         app.append_message("Application started!")
+#         app.append_message(f"Args: {sys.argv[1:]}")
+#         self.window.mainloop()
+
+#     # Event handlers
+#     def open_document_handler(self, *args):
+#         app.append_message(f"Open document event: {args}")
+
+#     def open_url_handler(self, *args):
+#         app.append_message(f"Open URL event: {args}")
+
+
+# if __name__ == '__main__':
+#     app = Application()
+#     app.run()
+
+
+# def callback(widget):
+#     msg = widget.get()
+#     msg = emojify(msg)
+#     conn.sendall(msg)
+#     tkmsg = with_surrogates(msg)
+#     msglog.append(f'>>> {tkmsg}')
+
+# def on_msg(msg):
+#     tkmsg = with_surrogates(msg)
+#     msglog.append(tkmsg)
+
+import tkinter as tk
+
+# Python 3.8.3
+class Application(tk.Frame):
+    def __init__(self, master=None):
+        self.canvas = None
+        self.quit_button = None
+        tk.Frame.__init__(self, master)
+        self.grid()
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.canvas = tk.Canvas(self, width=500, height=420, bg='yellow')
+        #save the ID
+        self.text_id = self.canvas.create_text(250, 200, font="* 180", text='\U0001F43F')
+        self.canvas.grid()
+        ##
+        #
+        chipmunk_utf_32 = '\U0001F43F'
+        chipmunk_utf_16 = chipmunk_utf_32.encode('utf-16-be')
+        chipmunk_utf_16 = chipmunk_utf_16.hex()
+        chipmunk = '\\u{}\\u{}'.format(chipmunk_utf_16[0:4], chipmunk_utf_16[4:8])
+        self.canvas.tk.eval('set the_tcl_chipmunk {}'.format(chipmunk))
+        self.canvas.tk.eval( '{} itemconfig {} -text [set the_tcl_chipmunk]'.format( str(self.canvas), self.text_id ) )
+        #
+        ##
+        self.quit_button = tk.Button(self, text='Quit', command=self.quit)
+        self.quit_button.grid()
+
+app = Application()
+app.master.title('Emoji')
+app.mainloop()

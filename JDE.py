@@ -1,4 +1,11 @@
 #Use pytest
+# Windows:
+# Notebook:
+#    Width: 1212
+#    Height: 495
+# Terminal:
+#    Width: 1212
+#    Height: 173
 from tkinter import *
 from tkinter.ttk import *
 from tkinter import filedialog
@@ -31,11 +38,44 @@ large_size = int(font_style[3].split("\n")[0])
 normal_font = (font_name, normal_size)
 medium_font = (font_name, medium_size)
 large_font = (font_name, large_size)
+#Create function to reset fonts and colors
+def reset_fonts_colors():
+    global normal_font
+    global medium_font
+    global large_font
+    global normal_size
+    global medium_size
+    global large_size
+    global min
+    global max
+    global light_mode_bg
+    global light_mode_fg
+    global dark_mode_bg
+    global dark_mode_fg
+    font_style = open(folder / "font.txt", "r").readlines()
+    font_name = font_style[0].split("\n")[0]
+    normal_size = int(font_style[1].split("\n")[0])
+    medium_size = int(font_style[2].split("\n")[0])
+    large_size = int(font_style[3].split("\n")[0])
+    min = font_style[4].split("\n")[0]
+    max = font_style[5].split("\n")[0]
+    normal_font = (font_name, normal_size)
+    medium_font = (font_name, medium_size)
+    large_font = (font_name, large_size)
+    theme_style = open(folder / "color_theme.txt", "r").readlines()
+    light_mode_style = theme_style[0].split(";")
+    light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
+    light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
+    dark_mode_style = theme_style[1].split(";")
+    dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
+    dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
 path_list = []
 have_syntax_list = []
 contents_list = []
+locked_list = []
 window = Tk()
-current_version = "0.0.7"
+window.iconify()
+current_version = "0.0.8"
 try:
     version = get_version()
     def final_check():
@@ -51,11 +91,11 @@ try:
                 break
             else:
                 pass
-    window.after(400, final_check)
+    window.after(1000, final_check)
 except:
     def show_version_could_not_be_checked():
         showwarning("Version Check", "Version Check Failed\n\nCould Not Connect To Server. Current Version: {}. Connect To The Internet To Check For Updates".format(current_version))
-    window.after(400, show_version_could_not_be_checked)
+    window.after(1000, show_version_could_not_be_checked)
 color_mode_file = open((folder / "settings.txt"), "r+")
 color_mode_soon = color_mode_file.readlines()
 color_mode_soon = color_mode_soon[7]
@@ -88,23 +128,28 @@ main_text_box = ultra_text(window, window=window, color_mode = color_mode, have_
 have_syntax_list.append(True)
 text_boxes.append(main_text_box)
 path_list.append("")
+locked_list.append(False)
 contents_list.append("#  .----------------.  .----------------.  .----------------. \n# | .--------------. || .--------------. || .--------------. |\n# | |     _____    | || |  ________    | || |  _________   | |\n# | |    |_   _|   | || | |_   ___ `.  | || | |_   ___  |  | |\n# | |      | |     | || |   | |   `. \ | || |   | |_  \_|  | |\n# | |   _  | |     | || |   | |    | | | || |   |  _|  _   | |\n# | |  | |_' |     | || |  _| |___.' / | || |  _| |___/ |  | |\n# | |  `.___.'     | || | |________.'  | || | |_________|  | |\n# | |              | || |              | || |              | |\n# | '--------------' || '--------------' || '--------------' |\n#  '----------------'  '----------------'  '----------------' \n\n# Welcome to Josh's Development Environment!")
 main_notebook.add(main_text_box)
 current_focus = main_notebook.index("current")
 main_notebook.tab(text_boxes[current_focus], text="Untitled.py")
 main_text_box.text.focus()
-the_terminal = Terminal(window, font=normal_font, relief=SUNKEN, borderwidth=5, width=102, height=9)
-the_terminal.place(relx=.525, rely=.865, anchor=CENTER)
+terminal_frame = Frame(window, width=930, height=174)
+terminal_frame.place(relx=.525, rely=.865, anchor=CENTER)
+terminal_frame.pack_propagate(False)
+the_terminal = Terminal(terminal_frame, font=normal_font, relief=SUNKEN, borderwidth=5, width=102, height=9)
+the_terminal.pack(fill=BOTH, expand=True)
 the_terminal.shell = True
 the_terminal.basename = "JDE: "
-the_terminal.run_command("cd /")
-the_terminal.clear()
+the_terminal.linebar = True
 commands_sidebar = Frame(window, bg="#e0dcd4", width=50)
 commands_sidebar.pack(side=LEFT, fill=Y)
 filetypes = (("Python Files", "*.py"), ("Text Files", "*.txt"))
-def open_file(event=None):
-    file_contents = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes, parent=window)
-    window.focus_force()
+def open_file(event=None, path=None):
+    if path == None:
+        file_contents = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes, parent=window)
+    else:
+        file_contents = path
     if file_contents == "":
         showwarning("File Opening Error", "An Error Occurred While Opening File\n\nNo File Was Selected", parent=window)
     else:
@@ -117,6 +162,7 @@ def open_file(event=None):
         have_syntax_list.append(have_syntax)
         text_boxes.append(main_text_box)
         path_list.append(file_contents)
+        locked_list.append(False)
         main_notebook.add(main_text_box)
         current_focus = main_notebook.index("current")
         main_notebook.select(main_notebook.index(END)-1)
@@ -139,8 +185,6 @@ def open_file(event=None):
         #Parse_text
         # text_boxes[current_focus].parse_text()
         text_boxes[current_focus].text.focus()
-        the_terminal.clear()
-        the_terminal.run_command("cd {}".format(str(Path(file_contents).parent)))
         window.after(200, text_boxes[current_focus].redraw)
 open_img = PhotoImage(file=str(folder / "open.png"))
 open_button = Button(commands_sidebar, image=open_img, font=medium_font, command=open_file, width=25, highlightbackground="#4e524f")
@@ -152,6 +196,10 @@ def create_new_tab(event=None, have_syntax=True, extension=False):
     have_syntax_list.append(have_syntax)
     text_boxes.append(main_text_box)
     path_list.append("")
+    if extension == False:
+        locked_list.append(False)
+    else:
+        locked_list.append(True)
     contents_list.append("#  .----------------.  .----------------.  .----------------. \n# | .--------------. || .--------------. || .--------------. |\n# | |     _____    | || |  ________    | || |  _________   | |\n# | |    |_   _|   | || | |_   ___ `.  | || | |_   ___  |  | |\n# | |      | |     | || |   | |   `. \ | || |   | |_  \_|  | |\n# | |   _  | |     | || |   | |    | | | || |   |  _|  _   | |\n# | |  | |_' |     | || |  _| |___.' / | || |  _| |___/ |  | |\n# | |  `.___.'     | || | |________.'  | || | |_________|  | |\n# | |              | || |              | || |              | |\n# | '--------------' || '--------------' || '--------------' |\n#  '----------------'  '----------------'  '----------------' \n\n# Welcome to Josh's Development Environment!")
     main_notebook.add(main_text_box)
     current_focus = main_notebook.index("current")
@@ -163,6 +211,8 @@ def create_new_tab(event=None, have_syntax=True, extension=False):
         text_boxes[current_focus].configure(bg=bg)
         text_boxes[current_focus].change_color("{}".format(color_mode))
     text_boxes[current_focus].insert("insert",  "#  .----------------.  .----------------.  .----------------. \n# | .--------------. || .--------------. || .--------------. |\n# | |     _____    | || |  ________    | || |  _________   | |\n# | |    |_   _|   | || | |_   ___ `.  | || | |_   ___  |  | |\n# | |      | |     | || |   | |   `. \ | || |   | |_  \_|  | |\n# | |   _  | |     | || |   | |    | | | || |   |  _|  _   | |\n# | |  | |_' |     | || |  _| |___.' / | || |  _| |___/ |  | |\n# | |  `.___.'     | || | |________.'  | || | |_________|  | |\n# | |              | || |              | || |              | |\n# | '--------------' || '--------------' || '--------------' |\n#  '----------------'  '----------------'  '----------------' \n\n# Welcome to Josh's Development Environment!")
+    for i in range(14):
+        text_boxes[current_focus].text.tag_add("sel", "{}.0".format(i), "{}.end".format(i))
     window.after(150, text_boxes[current_focus].redraw)
 window.bind("<Command-t>", create_new_tab)
 def close_tab(event=None):
@@ -173,6 +223,7 @@ def close_tab(event=None):
             text_boxes.pop(current_focus)
             path_list.pop(current_focus)
             contents_list.pop(current_focus)
+            locked_list.pop(current_focus)
             main_notebook.forget(current_focus)
         else:
             if contents_list[current_focus] != text_boxes[current_focus].text.get(1.0, "end-1c"):
@@ -199,7 +250,7 @@ def save_file(event=None, text_index=None):
         open(path, "r+").seek(0)
         open(path, "r+").truncate()
         open(path, "r+").seek(0)
-        contents = text_boxes[current_focus].get(1.0, END)
+        contents = text_boxes[current_focus].get(1.0, "end-1c")
         open(path, "r+").write(contents)
         contents_list[current_focus] = contents
 def save_all():
@@ -214,7 +265,6 @@ save_button.place(relx=.5, rely=.1578, anchor=CENTER)
 ToolTip(save_button, text="Save", window=window)
 window.bind("<Command-s>", save_file)
 def save_as_file(text_index=None):
-    window.focus_force()
     new_path = filedialog.asksaveasfilename(initialfile = "Untitled.py", filetypes=filetypes, parent=window)
     main_text_box.focus()
     if new_path == "":
@@ -230,8 +280,6 @@ def save_as_file(text_index=None):
         current_focus = main_notebook.index("current")
         global path
         path_list[current_focus] = new_path
-        the_terminal.clear()
-        the_terminal.run_command("cd {}".format(str(Path(new_path).parent)))
         main_notebook.tab(text_boxes[current_focus], text="{}".format(new_path.split("/")[-1]))
 save_as_img = PhotoImage(file=(folder / "save_as.png"))
 save_as_button = Button(commands_sidebar, image=save_as_img, font=medium_font, command=save_as_file, width=25, highlightbackground="#4e524f")
@@ -303,27 +351,20 @@ def redraw_all(event=None):
     for i in range(len(text_boxes)):
         text_boxes[i].redraw()
 window.bind("<Button-1>", redraw_all)
-def reset():
-    global bg
-    global fg
-    theme_style = open("color_theme.txt", "r").readlines()
-    light_mode_style = theme_style[0].split(";")
-    light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
-    light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
-    dark_mode_style = theme_style[1].split(";")
-    dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
-    dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
-    if color_mode == "Dark":
-        bg = dark_mode_bg
-        fg = dark_mode_fg
-    else:
-        bg = light_mode_bg
-        fg = light_mode_fg
-    for i in range(len(text_boxes)):
-        text_boxes[i].update()
-    main_label.update()
-    the_terminal.update()
-    main_notebook.update()
+def reset(from_extension = False):
+    try:
+        reset_fonts_colors()
+        for i in range(len(text_boxes)):
+            text_boxes[i].update()
+            text_boxes[i].text.config(font=normal_font)
+            text_boxes[i].redraw()
+        main_label.update()
+        main_label.config(font=large_font)
+        the_terminal.update()
+        the_terminal.config(font=normal_font)
+        main_notebook.update()
+    except:
+        pass
 def reset_syntax_colors(event=None):
     global text_boxes
     global path_list
@@ -361,6 +402,9 @@ def reset_syntax_colors(event=None):
         text_boxes[i].redraw()
         text_boxes[i].text.yview(MOVETO, yviews[i][0])
         text_boxes[i].text.xview(MOVETO, xviews[i][0])
+        if locked_list[i] == True:
+            text_boxes[i].text.image_create(1.0, image=show_extension_img)
+            text_boxes[i].text.config(state=DISABLED)
         text_boxes[i].text.focus_set()
         text_boxes[i].text.mark_set(INSERT, mark_sets[i])
     for i in range(len(text_boxes)):
@@ -413,7 +457,7 @@ def show_extension(extension_name):
     extension_name = ("https://jde-org.github.io/extensions/{}.xt".format(extension_name))
     extension_path = extension_name
     details = open_extension(extension_path)
-    create_new_tab(have_syntax=False)
+    create_new_tab(have_syntax=False, extension=True)
     current_focus = main_notebook.index("current")
     main_notebook.tab(text_boxes[current_focus], text="{}".format("Extension: {}".format(base_name)))
     #Remove everything from the text box
@@ -434,7 +478,7 @@ def show_extension(extension_name):
     text_boxes[current_focus].text.configure(state=DISABLED)
     contents_list[current_focus] = text_boxes[current_focus].text.get(1.0, END)
 show_extension_img = PhotoImage(file=(folder / "extensions.png"))
-show_extension_button = Button(commands_sidebar, image=show_extension_img, font=medium_font, command= lambda: extension_page(window, color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), function=show_extension, change_color=change_color_mode, text_boxes = text_boxes), width=25, highlightbackground="#4e524f")
+show_extension_button = Button(commands_sidebar, image=show_extension_img, font=medium_font, command= lambda: extension_page(window, color_mode=color_mode, x=window.winfo_x(), y=window.winfo_y(), function=show_extension, reset=reset, change_color=change_color_mode, text_boxes = text_boxes), width=25, highlightbackground="#4e524f")
 show_extension_button.place(relx=.5, rely=.789, anchor=CENTER)
 ToolTip(show_extension_button, text="Open Extensions", window=window)
 def report_a_bug(event=None):
@@ -492,6 +536,7 @@ def close():
             save_no_save = askquestion("Save Files", "Save Files Before Closing\n\nDo You Want To Save All Files Before Closing?", parent=window)
             if save_no_save == "yes":
                 save_all()
+            break
     window.destroy()
 quit_img = PhotoImage(file=(folder / "quit.png"))
 quit_button = Button(commands_sidebar, image=quit_img, font=normal_font, width=25, highlightbackground="#4e524f", command=close)
@@ -564,6 +609,50 @@ main_label.configure(bg=bg, fg=fg)
 the_terminal.configure(bg=bg, fg=fg, insertbackground=fg)
 main_notebook.bind('<Double-Button-1>', create_new_tab)
 text_boxes[0].insert("insert",  "#  .----------------.  .----------------.  .----------------. \n# | .--------------. || .--------------. || .--------------. |\n# | |     _____    | || |  ________    | || |  _________   | |\n# | |    |_   _|   | || | |_   ___ `.  | || | |_   ___  |  | |\n# | |      | |     | || |   | |   `. \ | || |   | |_  \_|  | |\n# | |   _  | |     | || |   | |    | | | || |   |  _|  _   | |\n# | |  | |_' |     | || |  _| |___.' / | || |  _| |___/ |  | |\n# | |  `.___.'     | || | |________.'  | || | |_________|  | |\n# | |              | || |              | || |              | |\n# | '--------------' || '--------------' || '--------------' |\n#  '----------------'  '----------------'  '----------------' \n\n# Welcome to Josh's Development Environment!")
+upon_open_paths = sys.argv[1:]
+#Append 5 paths
+# upon_open_paths += ["/Users/joshyacktman/Desktop/JDE/extension_handler.py", "/Users/joshyacktman/Desktop/JDE/check_version.py", "/Users/joshyacktman/Desktop/JDE/custom_widgets.py", "/Users/joshyacktman/Desktop/JDE/settings.txt", "/Users/joshyacktman/Desktop/JDE/JDE.py"]
+def argv_open_files():
+    for i in range(len(upon_open_paths)):
+        path = upon_open_paths[i]
+        if path.endswith(".py"):
+            create_new_tab()
+            text_boxes[-1].text.delete("1.0", "end")
+            text_boxes[-1].text.insert("insert", open(path, "r").read())
+            main_notebook.select(main_notebook.tabs()[-1])
+            current_focus = main_notebook.index("current")
+            text_boxes[current_focus].text.mark_set("insert", "1.0")
+            name = path.split("/")[-1]
+            main_notebook.tab(main_notebook.tabs()[-1], text=name)
+            path_list[current_focus] = path
+            save_file(text_index=current_focus)
+        elif path.endswith(".txt"):
+            create_new_tab(have_syntax=False)
+            text_boxes[-1].text.delete("1.0", "end")
+            text_boxes[-1].text.insert("insert", open(path, "r").read())
+            main_notebook.select(main_notebook.tabs()[-1])
+            current_focus = main_notebook.index("current")
+            text_boxes[current_focus].text.mark_set("insert", "1.0")
+            name = path.split("/")[-1]
+            main_notebook.tab(main_notebook.tabs()[-1], text=name)
+            path_list[current_focus] = path
+            save_file(text_index=current_focus)
+    upon_open_paths.clear()
+    main_notebook.select(0)
+    text_boxes[0].redraw()
+    for i in range(14):
+        text_boxes[0].text.tag_add("sel", "{}.0".format(i), "{}.end".format(i))
+    text_boxes[0].redraw()
+    main_notebook.select(len(text_boxes)-1)
+for i in range(14):
+    text_boxes[0].text.tag_add("sel", "{}.0".format(i), "{}.end".format(i))
+def open_future_argv(*args):
+    for i in range(len(args)):
+        upon_open_paths.append(str(args[i]))
+    argv_open_files()
+    window.focus_force()
+    main_notebook.select(len(main_notebook.tabs())-1)
+window.createcommand("::tk::mac::OpenDocument", open_future_argv)
 window.after(150, text_boxes[0].redraw)
 height_widget_list = [main_label, main_notebook, the_terminal, quit_button]
 width_widget_list = [the_terminal, settings_button, quit_button, quit_button]
@@ -582,10 +671,10 @@ for height in height_required_list:
 minimum_width = 0
 for width in width_required_list:
     minimum_width += width
-width, height = window.winfo_screenwidth(), window.winfo_screenheight()
-# x_coords = int((width/2) - (minimum_width/2))
-# y_coords = int((height/2) - (minimum_height/2))
-# window.geometry("{}x{}+{}+{}".format(minimum_width, minimum_height, x_coords, y_coords))
-window.geometry("{}x{}+0+0".format(minimum_width, minimum_height))
+x_coords = int(window.winfo_screenwidth()/2 - minimum_width/2)
+y_coords = int(window.winfo_screenheight()/2 - minimum_height/2)-20
+window.geometry("{}x{}+{}+{}".format(minimum_width, minimum_height, x_coords, y_coords))
 window.resizable(False, False)
+window.deiconify()
+window.after(10, argv_open_files())
 window.mainloop()

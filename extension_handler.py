@@ -1,6 +1,6 @@
 import requests
 def get_extension_details(web_path):
-    lines = requests.get("{}".format(web_path)).text.split("\n")
+    lines = requests.get("{}".format(web_path), timeout=.3).text.split("\n")
     #Remove first 25 lines 
     lines = lines[25:]
     extension_type = lines[0]
@@ -80,4 +80,4 @@ def get_list_items():
         r[i] = r[i].split("<a href=\"")[1]
     return r
 if __name__ == "__main__":
-    open_extension("https://jde-org.github.io/extensions/Default.xt")
+    print(open_extension("https://jde-org.github.io/extensions/Default.xt"))

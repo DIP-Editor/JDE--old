@@ -1,7 +1,7 @@
 import requests
 def get_version():
     url = 'https://jde-org.github.io/'
-    r = requests.get(url)
+    r = requests.get(url, timeout=.3)
     r = r.text
     r = r.split("\n")
     #  find line that contains "version =" and set as version_line_location

@@ -4,6 +4,7 @@ from tkinter.filedialog import *
 from tkinter import colorchooser
 from tkinter.font import Font
 from tkinter.messagebox import *
+from tkinter.ttk import Progressbar, Style
 from extension_handler import *
 import os
 import idlelib.colorizer as ic
@@ -38,6 +39,40 @@ max = font_style[5].split("\n")[0]
 normal_font = (font_name, normal_size)
 medium_font = (font_name, medium_size)
 large_font = (font_name, large_size)
+#Create function to reset fonts and colors
+def reset_fonts_colors():
+    global normal_font
+    global medium_font
+    global large_font
+    global normal_size
+    global medium_size
+    global large_size
+    global min
+    global max
+    global light_mode_bg
+    global light_mode_fg
+    global dark_mode_bg
+    global dark_mode_fg
+    global keywords_list
+    font_style = open(folder / "font.txt", "r").readlines()
+    font_name = font_style[0].split("\n")[0]
+    normal_size = int(font_style[1].split("\n")[0])
+    medium_size = int(font_style[2].split("\n")[0])
+    large_size = int(font_style[3].split("\n")[0])
+    min = font_style[4].split("\n")[0]
+    max = font_style[5].split("\n")[0]
+    normal_font = (font_name, normal_size)
+    medium_font = (font_name, medium_size)
+    large_font = (font_name, large_size)
+    theme_style = open(folder / "color_theme.txt", "r").readlines()
+    light_mode_style = theme_style[0].split(";")
+    light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
+    light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
+    dark_mode_style = theme_style[1].split(";")
+    dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
+    dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
+    with open(folder / "keywords.txt", "r") as f:
+        keywords_list = f.read().splitlines()
 #Get keywords from file
 with open(folder / "keywords.txt", "r") as f:
     keywords_list = f.read().splitlines()
@@ -91,6 +126,7 @@ class ultra_text(Frame):
         self.cdg = ic.ColorDelegator()
         self.cdg.prog = re.compile(r"\b(?P<MYGROUP>tkinter)\b|" + ic.make_pat(), re.S)
         self.cdg.idprog = re.compile(r"\s+(\w+)", re.S)
+        #re.compile(r'[\U00010000-\U0010FFFF]')
         with open(folder / "settings.txt", "r") as settings:
             settings = settings.read()
         settings = settings.split("\n")
@@ -465,8 +501,7 @@ class ultra_text(Frame):
     def open_template(self, x, y, event=None, **kwargs):
         #Creates an open template window
         color_mode = kwargs.pop("color_mode")
-        self.open_template = temp_open_pop_up(self, text=self.text, x=x, y=y, color_mode=color_mode)
-        # self.open_template.attach(self.text)
+        self.open_template = temp_open_pop_up(self, text=self, x=x, y=y, color_mode=color_mode)
 
     def double_parentheses(self, event):
         #Inserts back parentheses when ( is pressed
@@ -803,7 +838,7 @@ class temp_name_pop_up:
         else:
             bg = light_mode_bg
             fg = light_mode_fg
-        self.text_info = text_info.get("1.0", END)
+        self.text_info = text_info.get("1.0", "end-1c")
         #Create window
         self.pop_up_window = Toplevel()
         self.pop_up_window.title("Template Name")
@@ -884,6 +919,7 @@ class temp_open_pop_up(Frame):
         for item in self.templates_list:
             item = item.split(".py")[0]
             self.temp_open_pop_up_listbox.insert(END, item)
+        self.temp_open_pop_up_listbox.bind("<Double-Button-1>", self.confirm)
         self.export_img = PhotoImage(file=str(folder / "export_template.png"))
         self.export_button = Button(self.temp_open_pop_up_window, image=self.export_img, command=self.export_template)
         self.export_button.place(relx=.5, rely=.9, anchor=CENTER)
@@ -914,18 +950,14 @@ class temp_open_pop_up(Frame):
         else:
             showwarning("Export Error", "No Template Selected\n\nPlease Select A Template To Export")
 
-    def attach(self, text):
-        #Attach the text to the template
-        self.text = text
-
     def confirm(self):
         #Confirm the template selection
         self.file_chosen = self.temp_open_pop_up_listbox.get(ANCHOR) + ".py"
         if self.file_chosen != ".py":
-            self.text.delete(1.0, END)
             with open(folder / self.file_chosen, "r") as f:
-                self.text.insert(END, f.read())
+                self.text.text.insert("insert", f.read())
                 f.close()
+            self.text.redraw()
             self.temp_open_pop_up_window.destroy()
         else:
             showwarning("Template Error", "Template Could Not Be Opened\n\nNo Template Selected")
@@ -971,6 +1003,7 @@ class temp_destroy_pop_up:
         for item in self.templates_list:
             item = item.split(".py")[0]
             self.temp_destroy_pop_up_listbox.insert(END, item)
+        self.temp_destroy_pop_up_listbox.bind("<Double-Button-1>", self.confirm)
         self.confirm_button = Button(self.temp_destroy_pop_up_window, text="Confirm", font=normal_font, command=self.confirm)
         self.confirm_button.place(relx=.1, rely=.95, anchor=CENTER)
         self.confirm_button.configure(highlightbackground=bg)
@@ -978,15 +1011,18 @@ class temp_destroy_pop_up:
         self.cancel_button.place(relx=.9, rely=.95, anchor=CENTER)
         self.cancel_button.configure(highlightbackground=bg)
 
-    def confirm(self):
+    def confirm(self, event=None):
         #Confirm the template selection
-        self.file_chosen = self.temp_destroy_pop_up_listbox.get(ANCHOR) + ".py"
-        if self.file_chosen != ".py":
-            os.remove(folder / self.file_chosen)
-            showinfo("Template Deleted", "Template Deleted\n\nTemplate Has Been Beleted")
-            self.temp_destroy_pop_up_window.destroy()
-        else:
-            showwarning("Template Error", "Template Could Not Be Deleted\n\nNo Template Selected")
+        confirmation = askyesno("Confirmation", "File Deletion Confirmation\n\nAre You Sure You Want To Delete This Template?")
+        print(confirmation)
+        if confirmation == True:
+            self.file_chosen = self.temp_destroy_pop_up_listbox.get(ANCHOR) + ".py"
+            if self.file_chosen != ".py":
+                os.remove(folder / self.file_chosen)
+                showinfo("Template Deleted", "Template Deleted\n\nTemplate Has Been Beleted")
+                self.temp_destroy_pop_up_window.destroy()
+            else:
+                showwarning("Template Error", "Template Could Not Be Deleted\n\nNo Template Selected")
 
     def cancel(self):
         #Cancel the template selection
@@ -1441,6 +1477,7 @@ class keyword_change_page(Frame):
 class extension_page(Frame):
     def __init__(self, master, *args, **kwargs):
         #Retrieve the arguments
+        self.reset_function = kwargs.pop("reset")
         self.text_boxes = kwargs.pop("text_boxes")
         self.function = kwargs.pop("function")
         self.change_color = kwargs.pop("change_color")
@@ -1596,21 +1633,61 @@ class extension_page(Frame):
                         font_file.write(string_font)
                 for text_box in self.text_boxes:
                     text_box.redraw()
-                showinfo("Extension Applied", "Extension Applied Successfully\n\nThe Extension: \"{}\" Has Succesfully Been Applied".format(extension))
+                reset_fonts_colors()
+                self.reset_function(from_extension=True)
+                self.searchbox.config(font=normal_font)
+                self.searchbox.update()
+                self.extensions_listbox.config(font=normal_font)
+                self.extensions_listbox.update()
+                self.inpect_extension_button.config(font=normal_font)
+                self.inpect_extension_button.update()
+                self.use_extension_button.config(font=normal_font)
+                self.use_extension_button.update()
+                self.cancel_button.config(font=normal_font)
+                self.cancel_button.update()
+                showinfo("Extension Applied", "Extension Applied Successfully\n\nThe Extension: \"{}\" Has Succesfully Been Applied".format(extension), parent=self.extension_page_window)
                 self.extension_page_window.destroy()
             except:
-                showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later")
+                showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later", parent=self.extension_page_window)
     def cancel(self):
         #Cancel the extension
         self.extension_page_window.destroy()
 
+#Make a loading screen
+class loading(Frame):
+    def __init__(self, master, *args, **kwargs):
+        #Initialize the loading screen
+        Frame.__init__(self, *args, **kwargs)
+        self.window = Toplevel()
+        self.window.geometry("+0+0")
+        self.window.resizable(False, False)
+        self.window.iconify()
+        #Make window indestructable
+        Label(self.window, text="Loading...", font=normal_font, bg="white").pack()
+        self.window.title("Loading...")
+        p = Progressbar(self.window, orient=HORIZONTAL, length=200, mode='indeterminate')
+        p.pack()
+        p.start()
+
+    def show(self):
+        #Show the loading screen
+        self.window.deiconify()
+
+    def cancel (self):
+        #Cancel the loading screen
+        self.window.destroy()
+
 #Testing purposes
 if __name__ == "__main__":
     root = Tk()
-    root.title("Widget Testing")
-    width = root.winfo_screenwidth()
-    height = root.winfo_screenheight()
-    root.geometry("{}x{}+0+0".format(width, height))
-    text = ultra_text(root, window=root, color_mode = "light", have_syntax=True)
-    text.pack(expand=True, fill=BOTH)
+    s = Style()
+    s.theme_use("clam")
+    # root.title("Widget Testing")
+    # width = root.winfo_screenwidth()
+    # height = root.winfo_screenheight()
+    # root.geometry("{}x{}+0+0".format(width, height))
+    # text = ultra_text(root, window=root, color_mode = "light", have_syntax=True)
+    # text.pack(expand=True, fill=BOTH)
+    temp_destroy_pop_up(x=0, y=0, color_mode="light")
+    root.iconify()
     root.mainloop()
