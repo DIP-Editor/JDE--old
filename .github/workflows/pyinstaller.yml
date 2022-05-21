@@ -24,4 +24,4 @@ jobs:
         
     - name: Building the code with pyinstaller
       run: | 
-        pyinstaller $(git JDE.spec) --noconfirm
+        pyinstaller JDE.spec --noconfirm
