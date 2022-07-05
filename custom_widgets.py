@@ -1234,18 +1234,15 @@ class report_bug(Frame):
         elif message == " ":
             showinfo("Error", "Message Cannot Be Empty")
         else:
-            sender_email = "encryptedmessager@gmail.com"
-            sender_password = "zyapguy!"
-            recipient = "joshyacktman@gmail.com"
-            subject = "JDE: " + subject
-            body = ("Bug Report: {}".format(message))
-            final_message = "Subject: {}\n\n{}".format(subject, body)
-            server = smtplib.SMTP("smtp.gmail.com", 587)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, recipient, final_message)
-            showinfo("Report Bug", "Bug Report Has Been Sent")
-            self.report_bug_window.destroy()
+#             subject = "JDE: " + subject
+#             body = ("Bug Report: {}".format(message))
+#             final_message = "Subject: {}\n\n{}".format(subject, body)
+#             server = smtplib.SMTP("smtp.gmail.com", 587)
+#             server.starttls()
+#             server.login(sender_email, sender_password)
+#             server.sendmail(sender_email, recipient, final_message)
+#             showinfo("Report Bug", "Bug Report Has Been Sent")
+#             self.report_bug_window.destroy()
 
     def quit(self):
         #Close the report bug window
