@@ -1,0 +1,25 @@
+Lines 1-25 are reserved for comments
+The comment lines do not require any special characters such as "#"
+All other lines are for the legitimate extension
+Extensions cannot access files in real-time and do not run code
+The structure of an extension is as follows:
+The first line is the extesion type
+Types include:
+- Syntax (Is used to edit keywords and settings)
+- Color Theme Changer (Is used to change the color theme)
+- Font (Is used to change the font size and family)
+- Hybrid (Is used to edit more than one of the above)
+The second line is the permissions required to use the extension
+These include:
+- keywords.txt
+- settings.txt
+- color_theme.txt
+- font.txt
+These can be added together using the "|" character and can be in any order
+An example of the second line would be "color_theme.txt|settings.txt"
+The third line is the name of the extension
+The fourth line is the description of the extension
+The fifth line is the author of the extension
+The lines thereafter contain the extension which are detailed in explanation blocks
+Explanation blocks start and end with block holders and start and end with "<" and ">"
+See the default extension as a reference!

@@ -1,21 +1,18 @@
 ![#StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)
+<hr>
+
 # JDE:
-> # An IDE made in tkinter for python and editing plain text files
+> # An IDE made in Tkinter for Python scripting
 <br>
-
-<img width="1129" alt="bg" src="https://user-images.githubusercontent.com/95927277/167404675-85fd5d14-e25e-453a-b090-45b23b1846c0.png">
-
-<br>
+<img alt="Logo" src="JDE.png">
 
 _***Goals:***_
 - [x] Finish adding main features
-
 - [x] Fix all compilation bugs
-
 - [x] Make Mac release
 - [ ] Windows Release
-- [ ] Fix Terminal
-- [ ] Add Drag and Drop
+- [ ] Fix Terminal Bugs
+- [x] Add Drag and Drop
 - [ ] Convert to <a href="https://tukaan.github.io/" target="_blank" rel="noopener noreferrer">Tukaan</a>
 
 <br>
@@ -34,13 +31,11 @@ _***Goals:***_
 - Automatic indentation
 - Menubar
 - Template support
-- Settings (Can change color highlighting)
+- Settings
 - Bug Report
-- StackOverflow menubar command(s)
 - Autofill/intellisense
-- Github link menubar command
-- Dark mode and light mode
-- Easy commenting with Command-Slash (Supports multiple lines)
+- Dark and light mode
+- Easy commenting with Command-Slash
 - Command-r and/or F5 runs file
 - Multi-file support
 - Shortcuts window
@@ -48,13 +43,10 @@ _***Goals:***_
 - Update reminder
 - Documentation
 - Reset Button
+- Drag and drop
 
 <br>
 
 ***Coming soon:***
 - Fixed terminal
-- Fix syntax highlighting when color mode changed
-- Multi-file support:
-  - Make notebook not extend over window
-- Drag and drop
 - More

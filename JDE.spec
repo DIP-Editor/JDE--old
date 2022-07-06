@@ -8,7 +8,7 @@ a = Analysis(
     ['JDE.py'],
     pathex=[],
     binaries=[],
-    datas=[('settings.txt', '.'), ('keywords.txt', '.'), ('run.png', '.'), ('clear_terminal.png', '.'), ('clear_text.png', '.'), ('color_mode.png', '.'), ('copy.png', '.'), ('create_template.png', '.'), ('delete_template.png', '.'), ('find_and_replace.png', '.'), ('open_template.png', '.'), ('open.png', '.'), ('paste.png', '.'), ('quit.png', '.'), ('report_bug.png', '.'), ('save_as.png', '.'), ('save.png', '.'), ('settings.png', '.'), ('reset.png', '.'), ('export_template.png', '.'), ('extensions.png', '.'), ('color_theme.txt', '.'), ('font.txt', '.')],
+    datas=[('settings.txt', '.'), ('keywords.txt', '.'), ('run.png', '.'), ('clear_terminal.png', '.'), ('clear_text.png', '.'), ('color_mode.png', '.'), ('copy.png', '.'), ('create_template.png', '.'), ('delete_template.png', '.'), ('find_and_replace.png', '.'), ('open_template.png', '.'), ('open.png', '.'), ('paste.png', '.'), ('quit.png', '.'), ('report_bug.png', '.'), ('save_as.png', '.'), ('save.png', '.'), ('settings.png', '.'), ('reset.png', '.'), ('export_template.png', '.'), ('extensions.png', '.'), ('create_extension.png', '.'), ('test.png', '.'), ('submit.png', '.'), ('color_theme.txt', '.'), ('font.txt', '.'), ('dilate_size.txt', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -52,7 +52,8 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     info_plist={
-                'CFBundleDocumentTypes': [
+        'CFBundleShortVersionString': "0.0.8",
+        'CFBundleDocumentTypes': [
             {
                 'CFBundleTypeExtensions': ['py', 'txt'],
                 'CFBundleTypeName': 'Python Script', 

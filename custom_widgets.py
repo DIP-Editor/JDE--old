@@ -4,7 +4,7 @@ from tkinter.filedialog import *
 from tkinter import colorchooser
 from tkinter.font import Font
 from tkinter.messagebox import *
-from tkinter.ttk import Progressbar, Style
+from tkinter.ttk import Progressbar, Style, Notebook
 from extension_handler import *
 import os
 import idlelib.colorizer as ic
@@ -39,6 +39,12 @@ max = font_style[5].split("\n")[0]
 normal_font = (font_name, normal_size)
 medium_font = (font_name, medium_size)
 large_font = (font_name, large_size)
+#Get the dilate size from file
+dilate_size = int(open(folder / "dilate_size.txt", "r").readlines()[0])
+def update_dilate_size():
+    global dilate_size
+    with open(folder / "dilate_size.txt", "r") as f:
+        dilate_size = int(f.readlines()[0])
 #Create function to reset fonts and colors
 def reset_fonts_colors():
     global normal_font
@@ -85,17 +91,55 @@ def update_list():
         f.seek(0)
         for item in keywords_list:
             f.write(item + "\n")
+#Create function to get all the info updated
+def get_info_from_files():
+    global theme_style
+    global light_mode_style
+    global light_mode_bg
+    global light_mode_fg
+    global dark_mode_style
+    global dark_mode_bg
+    global dark_mode_fg
+    global font_style
+    global font_name
+    global normal_size
+    global medium_size
+    global large_size
+    global min
+    global max
+    global normal_font
+    global medium_font
+    global large_font
+    theme_style = open(folder / "color_theme.txt", "r").readlines()
+    light_mode_style = theme_style[0].split(";")
+    light_mode_bg = light_mode_style[0].split(": ")[1].split("=")[1]
+    light_mode_fg = light_mode_style[1].split("=")[1].split(";")[0]
+    dark_mode_style = theme_style[1].split(";")
+    dark_mode_bg = dark_mode_style[0].split(": ")[1].split("=")[1]
+    dark_mode_fg = dark_mode_style[1].split("=")[1].split(";")[0]
+    #Get Font from file
+    font_style = open(folder / "font.txt", "r").readlines()
+    font_name = font_style[0].split("\n")[0]
+    normal_size = int(font_style[1].split("\n")[0])
+    medium_size = int(font_style[2].split("\n")[0])
+    large_size = int(font_style[3].split("\n")[0])
+    min = font_style[4].split("\n")[0]
+    max = font_style[5].split("\n")[0]
+    normal_font = (font_name, normal_size)
+    medium_font = (font_name, medium_size)
+    large_font = (font_name, large_size)
+    update_dilate_size()
+    reset_fonts_colors()
+
 #Create ToolTip class
-class ToolTip(Frame):
-    def __init__(self, master, *args, **kwargs):
+class ToolTip():
+    def __init__(self, master, orient="E", *args, **kwargs):
         #Get necessary arguments
         self.window = kwargs.pop("window")
         self.tooltip_text = kwargs.pop("text")
-        #Set up Frame
-        Frame.__init__(self, *args, **kwargs)
+        self.orient = orient
         self.overall_widget = master
         #Get info and create bindings
-        self.height = int(self.overall_widget.winfo_height())
         self.overall_widget.bind("<Enter>", self.create_label)
         self.overall_widget.bind("<Leave>", self.destroy_label)
         self.overall_widget.bind("<ButtonPress>", self.destroy_label)
@@ -103,8 +147,24 @@ class ToolTip(Frame):
     def create_label(self, event):
         #Create tooltip label and place next to widget
         self.tooltip = Label(self.window, text=self.tooltip_text, bg="yellow", fg="black", bd=1, relief=SOLID, font=normal_font)
-        self.tooltip.place(x=self.overall_widget.winfo_x()+self.overall_widget.winfo_width()+5, y=self.overall_widget.winfo_y())
-    
+        if self.orient == "N":
+            self.tooltip.place(x=self.overall_widget.winfo_x(), y=self.overall_widget.winfo_y()-self.tooltip.winfo_reqheight()-5)
+        elif self.orient == "E":
+            self.tooltip.place(x=self.overall_widget.winfo_x()+self.overall_widget.winfo_reqwidth()+5, y=self.overall_widget.winfo_y())
+        elif self.orient == "S":
+            self.tooltip.place(x=self.overall_widget.winfo_x(), y=self.overall_widget.winfo_y()+self.overall_widget.winfo_reqheight()+5)
+        elif self.orient == "W":
+            self.tooltip.place(x=self.overall_widget.winfo_x()-self.tooltip.winfo_reqwidth()-5, y=self.overall_widget.winfo_y())
+        elif self.orient == "NE":
+            self.tooltip.place(x=self.overall_widget.winfo_x()+self.overall_widget.winfo_reqwidth()+5, y=self.overall_widget.winfo_y()-self.tooltip.winfo_reqheight()-5)
+        elif self.orient == "NW":
+            self.tooltip.place(x=self.overall_widget.winfo_x()-self.tooltip.winfo_reqwidth()-5, y=self.overall_widget.winfo_y()-self.tooltip.winfo_reqheight()-5)
+        elif self.orient == "SE":
+            self.tooltip.place(x=self.overall_widget.winfo_x()+self.overall_widget.winfo_reqwidth()+5, y=self.overall_widget.winfo_y()+self.overall_widget.winfo_reqheight()+5)
+        elif self.orient == "SW":
+            self.tooltip.place(x=self.overall_widget.winfo_x()-self.tooltip.winfo_reqwidth()-5, y=self.overall_widget.winfo_y()+self.overall_widget.winfo_reqheight()+5)
+        else:
+            self.tooltip.place(x=self.overall_widget.winfo_x()+self.overall_widget.winfo_reqwidth()+5, y=self.overall_widget.winfo_y())
     def destroy_label(self, event):
         #Destroy tooltip label
         self.tooltip.destroy()
@@ -120,32 +180,31 @@ class ultra_text(Frame):
         #Set up color_mode
         if self.color_mode == "Dark":
             bg = dark_mode_bg
+            fg = dark_mode_fg
         else:
             bg = light_mode_bg
+            fg = light_mode_fg
         #Defining colors for syntax highlighting
         self.cdg = ic.ColorDelegator()
-        self.cdg.prog = re.compile(r"\b(?P<MYGROUP>tkinter)\b|" + ic.make_pat(), re.S)
-        self.cdg.idprog = re.compile(r"\s+(\w+)", re.S)
-        #re.compile(r'[\U00010000-\U0010FFFF]')
         with open(folder / "settings.txt", "r") as settings:
             settings = settings.read()
         settings = settings.split("\n")
-        tag_mygroup = str(settings[0])
+        tag_imports = str(settings[0])
         tag_comment = str(settings[1])
         tag_keyword = str(settings[2])
         tag_builtin = str(settings[3])
         tag_string = str(settings[4])
         tag_definition = str(settings[5])
         tag_class = str(settings[6])
-        self.cdg.tagdefs["MYGROUP"] = {"foreground": tag_mygroup, "background": bg}
-        self.cdg.tagdefs["COMMENT"] = {"foreground": tag_comment, "background":bg}
-        self.cdg.tagdefs["KEYWORD"] = {"foreground": tag_keyword, "background": bg}
-        self.cdg.tagdefs["BUILTIN"] = {"foreground": tag_builtin, "background": bg}
-        self.cdg.tagdefs["STRING"] = {"foreground": tag_string, "background": bg}
-        self.cdg.tagdefs["DEFINITION"] = {"foreground": tag_definition, "background": bg}
-        self.cdg.tagdefs["CLASS"] = {"foreground": tag_class, "background": bg}
+        self.cdg.tagdefs["COMMENT"] = {"foreground": tag_comment}
+        self.cdg.tagdefs["KEYWORD"] = {"foreground": tag_keyword}
+        self.cdg.tagdefs["BUILTIN"] = {"foreground": tag_builtin}
+        self.cdg.tagdefs["STRING"] = {"foreground": tag_string}
+        self.cdg.tagdefs["DEFINITION"] = {"foreground": tag_definition}
+        self.cdg.tagdefs["CLASS"] = {"foreground": tag_class}
 
-        self.text_font = (font_name, normal_size)
+        update_dilate_size()
+        self.text_font = (font_name, dilate_size)
 
         #Create base text widget
         if "height" and "width" in kwargs:
@@ -154,8 +213,9 @@ class ultra_text(Frame):
             #, width=130, height=29
             self.text = Text(self, font=self.text_font, wrap="none", undo=True, borderwidth=2, relief=RIDGE, width=95, height=25)
         #Check if syntax highlighting is needed
+        self.perc = ip.Percolator(self.text)
         if self.have_syntax == True:
-            ip.Percolator(self.text).insertfilter(self.cdg)
+            self.perc.insertfilter(self.cdg)
         
         #Create scrollbar
         self.scrollbar = Scrollbar(self, orient=VERTICAL, command=self.text.yview)
@@ -165,24 +225,35 @@ class ultra_text(Frame):
         self.numberLines = TextLineNumbers(self, width=40)
         self.numberLines.attach(self.text)
 
+        #Create breakpoints
+        if self.have_syntax == True:
+            self.breakpoints = BreakpointBar(self, width=20)
+            self.breakpoints.attach(self.text)
+
         #Pack widgets
         self.scrollbar.pack(side=RIGHT, fill=Y)
         self.numberLines.pack(side=LEFT, fill=Y, padx=(5, 0))
+        if self.have_syntax == True:
+            self.breakpoints.pack(side=LEFT, fill=Y)
         self.text.pack(side=RIGHT, fill=BOTH, expand=True)
 
         #Create bindings
-        self.window.bind("<Any>", self.redraw())
+        self.window.bind("<Any-KeyRelease>", self.redraw)
         self.window.bind("<BackSpace>", lambda x: self.after(1, (self.redraw())), add=True)
-        self.text.bind("<Key>", self.onPressDelay)
+        self.text.bind("<Motion>", self.redraw)
         self.text.bind("<Button-1>", self.numberLines.redraw)
         self.scrollbar.bind("<Button-1>", self.onScrollPress)
         self.text.bind("<MouseWheel>", self.onPressDelay)
+        self.text.bind("<KeyRelease-Return>", self.redraw, add=True)
+        self.text.bind("<KeyRelease-Return>", lambda x: [self.redraw(), self.new_line_indent(self), self.callback("")], add=True)
         self.text.bind("<Any-KeyRelease>", self._autocomplete, add=True)
         self.text.bind("<Any-KeyRelease>", self.parse_line, add=True)
         self.window.bind("<Button-1>", self.parse_line, add=True)
         self.text.bind("<BackSpace>", self.parse_text, add=True)
+        self.text.bind("<Return>", self.parse_text, add=True)
         self.text.bind("<Tab>", self._handle_tab, add=True)
         self.text.bind("\"", self.double_quotes)
+        self.text.bind("\'", self.double_punctuation)
         self.text.bind("(", self.double_parentheses)
         self.text.bind(")", self.close_parentheses)
         self.text.bind("<BackSpace>", self.closing_backspace, add=True)
@@ -193,11 +264,10 @@ class ultra_text(Frame):
         self.text.bind("]", self.close_square_braces)
         self.text.bind("<Command-slash>", self.make_comment)
         self.text.bind("<Shift-Tab>", self.back_tab)
-        self.text.bind("<KeyRelease-Return>", lambda x: [self.redraw(), self.new_line_indent(self)], add=True)
-        self.text.bind("<Command-Shift-k>", self.delete_line)
+        self.text.bind("<Command-k>", self.delete_line)
         self.text.bind("<Command-b>", self.add_breakpoint)
-        self.text.bind("<Command-=>", self.increase_font)
-        self.text.bind("<Command-Key-minus>", self.decrease_font)
+        self.text.bind("<Command-a>", self.select_all)
+        self.text.bind("<Command-Shift-Z>", self.redo)
 
         #Create font with 4 spaces
         font = Font(font=self.text["font"])
@@ -205,18 +275,35 @@ class ultra_text(Frame):
         self.text.config(tabs=(tab_width))
 
         self.temporary_autocomplete_list = []
+        self.restricted_events = [97, 100663418, 134217827, 50331750, 285212788, 150995062, 117440632, 671088747, 251658354, 104857722, 218103927, 906033406, 704643164]
+
+    def redo(self, event):
+        self.text.edit_redo()
+        self.redraw()
+
+    def select_all(self, event=None):
+        line_count = self.text.index("end-1c").split(".")[0]
+        for i in range(int(line_count)):
+            self.text.tag_add("sel", "{}.0".format(i+1), "{}.end".format(i+1))
+            if self.text.get("{}.0".format(i+1), "{}.end".format(i+1)) == "":
+                self.text.insert("{}.0".format(i+1), " ")
+            self.text.tag_add("sel", "{}.0".format(i+1), "{}.end".format(i+1))
+        length_of_line = self.text.index("end-1c").split(".")[1]
+        self.text.mark_set("insert", "{}.{}".format(line_count, length_of_line))
+        self.text.see("insert")
+        return "break"
 
     def increase_font(self, event=None):
-        if int(self.text_font[1])+1 < int(max):
+        if int(self.text_font[1])+1 <= int(max):
             self.text_font = (self.text_font[0], int(self.text_font[1]) + 1)
             self.text.config(font=self.text_font)
-            self.numberLines.redraw()
+            self.redraw()
 
     def decrease_font(self, event=None):
-        if int(self.text_font[1])-1 > int(min):
+        if int(self.text_font[1])-1 >= int(min):
             self.text_font = (self.text_font[0], int(self.text_font[1]) - 1)
             self.text.config(font=self.text_font)
-            self.numberLines.redraw()
+            self.redraw()
 
     def remove_indentation(self, event=None):
         #Print yview
@@ -319,6 +406,10 @@ class ultra_text(Frame):
                         self.text.insert("{}.0".format(int(current_line)+1), "\t")
                     if current_line_contents[-1] == ":":
                         self.text.insert("{}.0".format(int(current_line)+1), "\t")
+                    elif current_line_contents[-1] == ":":
+                        self.text.insert("{}.0".format(int(current_line)+1), "\t")
+                    elif current_line_contents[-1] == ",":
+                        self.text.insert("{}.0".format(int(current_line)+1), "\t") 
                 else:
                     for i in range(current_line_contents.count("    ")):
                         self.text.insert("{}.0".format(int(current_line)+1), "    ")
@@ -329,15 +420,10 @@ class ultra_text(Frame):
     def delete_line(self, event=None):
         #Deletes the current line
         try:
-            first_line = int(self.text.index("sel.first").split(".")[0])
-            last_line = int(self.text.index("sel.last").split(".")[0])
-            for line in range(first_line, last_line+1):
-                if line != 1:
-                    self.text.delete("{}.0 - 1 chars".format(line), "{}.end".format(line))
-                    self.redraw()
-                else:
-                    self.text.delete("{}.0".format(line), "{}.end + 1 chars".format(line))
-                    self.redraw()
+            first_line = int(self.text.index("sel.first").split("."))
+            last_line = int(self.text.index("sel.last").split("."))
+            self.text.delete("{}".format(first_line), "{}".format(last_line))
+            self.redraw()
         except:
             # if self.text.get("1.0", "end") != "":
             self.text.delete("insert linestart", "insert lineend")
@@ -375,6 +461,30 @@ class ultra_text(Frame):
         self.config(background=bg)
         self.text.config(bg=bg, fg=fg, insertbackground=fg)
         self.numberLines.config(bg=bg)
+        if self.have_syntax == True:
+            self.breakpoints.config(bg=bg)
+
+    def reset_syntax(self):
+        if self.have_syntax:
+            self.perc.removefilter(self.cdg)
+            self.cdg = ic.ColorDelegator()
+            with open(folder / "settings.txt", "r") as settings:
+                settings = settings.read()
+            settings = settings.split("\n")
+            tag_imports = str(settings[0])
+            tag_comment = str(settings[1])
+            tag_keyword = str(settings[2])
+            tag_builtin = str(settings[3])
+            tag_string = str(settings[4])
+            tag_definition = str(settings[5])
+            tag_class = str(settings[6])
+            self.cdg.tagdefs["COMMENT"] = {"foreground": tag_comment}
+            self.cdg.tagdefs["KEYWORD"] = {"foreground": tag_keyword}
+            self.cdg.tagdefs["BUILTIN"] = {"foreground": tag_builtin}
+            self.cdg.tagdefs["STRING"] = {"foreground": tag_string}
+            self.cdg.tagdefs["DEFINITION"] = {"foreground": tag_definition}
+            self.cdg.tagdefs["CLASS"] = {"foreground": tag_class}
+            self.perc.insertfilter(self.cdg)
 
     def squeeze(self, s):
         return re.sub(r'(.)\1+', r'\1', s)
@@ -383,8 +493,8 @@ class ultra_text(Frame):
         for i in range(len(special_list)):
             for j in range(len(special_list)):
                 if special_list[i] in special_list[j]:
-                    #Bring in front of j
-                    special_list.insert(j, special_list.pop(i))
+                    #Bring behind i
+                    special_list.insert(i, special_list.pop(j))
             return special_list
 
     def callback(self, word):
@@ -399,6 +509,9 @@ class ultra_text(Frame):
         words = list(dict.fromkeys(words))
         #Sort and squeeze
         words = [s for _, g in groupby(words, self.squeeze) for s in sorted(g, key=len)]
+        # 
+        # 
+        # 
         #Sort using special_sort
         last_sort = self.special_sort(words)
         while True:
@@ -409,6 +522,11 @@ class ultra_text(Frame):
                 last_sort = sort
         #Make words the sorted list
         words = last_sort
+        # 
+        # 
+        # 
+        #Remove blank words
+        words = [word for word in words if word != ""]
         matches = [x for x in words if x.startswith(word)]
         return matches
 
@@ -426,8 +544,12 @@ class ultra_text(Frame):
 
     def _autocomplete(self, event):
         #Autocompletes the current word 
-        if event.char and self.callback and event.keysym != "BackSpace":
+        print(event)
+        if event.char and self.callback and event.keysym != "BackSpace" and (event.keycode not in self.restricted_events):
             word = self.text.get("insert-1c wordstart", "insert-1c wordend")
+            #wordstart
+            if "\n" in word:
+                word = word.split("\n")[1]
             matches = self.callback(word)
             if matches:
                 remainder = matches[0][len(word):]
@@ -450,7 +572,14 @@ class ultra_text(Frame):
                 #Get the variable name
                 variable_name = current_line_contents.split("=")[0].strip()
                 #Add the variable name to the list of important things
-                self.temporary_autocomplete_list.append(variable_name)
+                #Check if it is only one character long
+                if len(variable_name) == 1:
+                    #Check if it is a letter
+                    if variable_name.isalpha():
+                        #Add to the front of the list
+                        self.temporary_autocomplete_list.insert(0, variable_name)
+                else:
+                    self.temporary_autocomplete_list.append(variable_name)
             elif current_line_contents.startswith("def"):
                 #Get the function name
                 function_name = current_line_contents.split("(")[0].split("def")[1].strip()
@@ -469,10 +598,23 @@ class ultra_text(Frame):
                 self.temporary_autocomplete_list.append(class_name)
             elif current_line_contents.startswith("import") or current_line_contents.startswith("from"):
                 if "from" in current_line_contents:
-                    #Get the module name
-                    module_name = current_line_contents.split("import")[0].split("from")[1].split(".")[0].strip()
-                    #Add the module name to the list of important things
-                    self.temporary_autocomplete_list.append(module_name)
+                    try:
+                        #Get the module name
+                        module_name = current_line_contents.split("import")[0].split("from")[1].split(".")[0].strip()
+                        #Add the module name to the list of important things
+                        self.temporary_autocomplete_list.append(module_name)
+                        #Get what is being imported
+                        imported_name = current_line_contents.split("import")[1]
+                        if "," in imported_name:
+                            imported_split = imported_name.split(",")
+                            for split_import in imported_split:
+                                #Add the imported name to the list of important things
+                                self.temporary_autocomplete_list.append(split_import.strip())
+                        else:
+                            #Add the imported name to the list of important things
+                            self.temporary_autocomplete_list.append(imported_name.strip())
+                    except:
+                        pass
                 else:
                     #Get the module name
                     module_name = current_line_contents.split("import")[1].split(".")[0].strip()
@@ -480,6 +622,7 @@ class ultra_text(Frame):
                     self.temporary_autocomplete_list.append(module_name)
 
     def parse_text(self, event=None):
+        self.temporary_autocomplete_list = []
         contents = self.text.get(1.0, END)
         for line in contents.split("\n"):
             self.parse_line(line = line)
@@ -490,13 +633,6 @@ class ultra_text(Frame):
         for item in self.temporary_autocomplete_list:
             if item not in contents:
                 self.temporary_autocomplete_list.remove(item)
-
-    def make_find_and_replace(self, x, y, event=None, **kwargs):
-        #Creates a find and replace window
-        color_mode = kwargs.pop("color_mode")
-        self.search_bar = search_text(self, x=x, y=y, color_mode = color_mode)
-        self.search_bar.attach(self.text, self)
-        self.search_bar.focus_set()
 
     def open_template(self, x, y, event=None, **kwargs):
         #Creates an open template window
@@ -578,6 +714,12 @@ class ultra_text(Frame):
         self.text.insert(INSERT, "\"")
         self.text.mark_set(INSERT, str(self_anchor[0]) + "." + str(int(self_anchor[1])))
 
+    def double_punctuation(self, event):
+        #Inserts back punctuation when ' is pressed
+        self_anchor = str(self.text.index("insert")).split(".")
+        self.text.insert(INSERT, "'")
+        self.text.mark_set(INSERT, str(self_anchor[0]) + "." + str(int(self_anchor[1])))
+
     def new_line_indent(self, event=None):
         #Inserts a new line and indents it when Enter is pressed
         line = self.text.get("insert-1c linestart", "insert-1c lineend")
@@ -606,10 +748,6 @@ class ultra_text(Frame):
                 if editable_line[-1] == ":":
                     self.text.insert("insert", "    ")
 
-    def get_text(self):
-        #Returns contents of text
-        return self.text.get("1.0", "end")
-
     def return_anchor(self, event):
         #Returns the anchor of the current cursor
         return self.text.index("insert")
@@ -617,14 +755,19 @@ class ultra_text(Frame):
     def onScrollPress(self, *args):
         #Scrolls the text when mouse wheel is used
         self.scrollbar.bind("<B1-Motion>", self.numberLines.redraw)
+        if self.have_syntax == True:
+            self.scrollbar.bind("<B1-Motion>", self.breakpoints.redraw)
 
     def onScrollRelease(self, *args):
         #Unbinds the scrollbar when mouse wheel is released
         self.scrollbar.unbind("<B1-Motion>", self.numberLines.redraw)
+        if self.have_syntax == True:
+            self.scrollbar.unbind("<B1-Motion>", self.breakpoints.redraw)
 
     def onPressDelay(self, *args):
         #Delays the execution of the onPress function
-        self.after(2, self.numberLines.redraw)
+        self.redraw(*args)
+
 
     def get(self, *args, **kwargs):
         #Allowws for the use of get
@@ -642,12 +785,14 @@ class ultra_text(Frame):
         #Allows for the use of index
         return self.text.index(*args, **kwargs)
 
-    def redraw(self):
+    def redraw(self, event=None):
         #Redraws the text
-        try:
-            self.numberLines.redraw()
-        except:
-            pass
+        self.numberLines.redraw()
+        if self.have_syntax == True:
+            if event:
+                self.breakpoints.redraw(event)
+            else:
+                self.breakpoints.redraw()
 
 #Create TextLineNumbers class
 class TextLineNumbers(Canvas):
@@ -672,10 +817,71 @@ class TextLineNumbers(Canvas):
                 if dline is None: break
                 y = dline[1]
                 linenum = str(i).split(".")[0]
-                self.create_text(2, y, anchor="nw", text=linenum, font=normal_font, fill="#2197db") #606366 #90a395 #808090 #14a83c #2893d1 #2197db
+                size = normal_size
+                if int(linenum) >= 10000:
+                    #line_size is every 10^nth increment of the line number after the first 10000 lines
+                    line_size = linenum[:len(linenum)-4]
+                    #Turn line_size to an integer divided by 10
+                    line_size = int(int(line_size)/10)
+                    if line_size == 0:
+                        line_size = 1
+                    size = size-int(3*(line_size*1.75))
+                    if size < 3:
+                        size = 3
+                self.create_text(2, y, anchor="nw", text=linenum, font=(font_name, size), fill="#2197db") #606366 #90a395 #808090 #14a83c #2893d1 #2197db
                 i = self.textwidget.index("%s+1line" % i)
         except:
             pass
+
+#Create a breakpoint bar class
+class BreakpointBar(Canvas):
+    def __init__(self, *args, **kwargs):
+        #Initializes the canvas
+        Canvas.__init__(self, *args, **kwargs, highlightthickness=0)
+        self.textwidget = None
+        self.bind("<Motion>", self.redraw)
+
+    def attach(self, text_widget):
+        #Attaches the canvas to the text widget
+        self.textwidget = text_widget
+
+    def redraw(self, *args):
+        """redraw line numbers"""
+        i = self.textwidget.index("@0,0")
+        if len(args) > 0:
+            self.delete("all")
+            self.unbind_all("<Enter>")
+            self.unbind_all("<Leave>")
+            event = args[0]
+            # print(str(event).split(" ")[0].split("<")[1])
+            index = self.textwidget.index("@{},{}".format(event.x, event.y))
+            index_linenum = str(index).split(".")[0]
+            while True:
+                dline= self.textwidget.dlineinfo(i)
+                if dline is None: break
+                y = dline[1]
+                linenum = str(i).split(".")[0]
+                if linenum == index_linenum:
+                    oval = self.create_oval(5, y, 15, y+10, fill="red", outline="red")
+                    self.tag_bind(oval, "<Enter>", lambda event: self.on_enter(event, oval))
+                    self.tag_bind(oval, "<Leave>", lambda event: self.on_exit(event, oval))
+                    self.tag_bind(oval, "<Button-1>", lambda event: self.on_press(event, oval))
+                i = self.textwidget.index("%s+1line" % i)
+
+    def on_enter(self, event, oval):
+        self.itemconfig(oval, fill="dark red", outline="dark red")
+
+
+    def on_exit(self, event, oval):
+        self.itemconfig(oval, fill="red", outline="red")
+
+    def on_press(self, event, oval):
+        index_linenum = int(str(self.textwidget.index("@{},{}".format(event.x, event.y))).split(".")[0])
+        self.textwidget.tag_remove("sel", "1.0", "end")
+        self.textwidget.insert("{}.end".format(index_linenum), "\nbreakpoint()\n")
+        self.textwidget.focus()
+        self.textwidget.mark_set("insert", "{}.end".format(index_linenum+2))
+        # self.after(10, self.redraw(event))
 
 #Create find and replace class
 class search_text(Frame):
@@ -695,15 +901,15 @@ class search_text(Frame):
             fg = light_mode_fg
         #Create window
         self.search_text_window = Toplevel(self)
-        self.search_text_window.focus_force()
+        self.search_text_window.resizable(False, False)
         self.search_text_window.title("Search / Find and Replace")
         self.search_text_window.config(bg=bg)
         self.search_text_window.geometry("+{}+{}".format(self.x, self.y))
         self.search_text_window.attributes("-topmost", True)
         #Create widgets
-        self.text_search_entry = Entry(self.search_text_window, borderwidth=3, font=normal_font, relief=SUNKEN)
+        self.text_search_entry = Entry(self.search_text_window, borderwidth=3, font=normal_font, relief=SUNKEN, justify=CENTER)
         self.search_button = Button(self.search_text_window, text="Search File", font=normal_font, command=self.test_find)
-        self.text_replace_entry = Entry(self.search_text_window, borderwidth=3, font=normal_font, relief=SUNKEN)
+        self.text_replace_entry = Entry(self.search_text_window, borderwidth=3, font=normal_font, relief=SUNKEN, justify=CENTER)
         self.replace_button = Button(self.search_text_window, text="Replace", font=normal_font, command=self.test_replace)
         self.replace_all_button = Button(self.search_text_window, text="Replace All", font=normal_font, command=self.test_replace_all)
         self.search_list = list()
@@ -720,6 +926,41 @@ class search_text(Frame):
         self.search_button.configure(highlightbackground=bg)
         self.replace_button.configure(highlightbackground=bg)
         self.replace_all_button.configure(highlightbackground=bg)
+        self.search_text_window.protocol("WM_DELETE_WINDOW", self.close_window)
+
+    def close_window(self):
+        #Close window
+        self.search_text_window.destroy()
+        self.destroy()
+
+    def reset_color(self):
+        #Resets the color of the text
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.search_text_window.config(bg=bg)
+        self.text_search_entry.configure(bg=bg, insertbackground = fg, fg=fg)
+        self.text_replace_entry.configure(bg=bg, insertbackground = fg, fg=fg)
+        self.search_button.configure(highlightbackground=bg)
+        self.replace_button.configure(highlightbackground=bg)
+        self.replace_all_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.text_search_entry.configure(font=normal_font)
+        self.text_replace_entry.configure(font=normal_font)
+        self.search_button.configure(font=normal_font)
+        self.replace_button.configure(font=normal_font)
+        self.replace_all_button.configure(font=normal_font)
+    
+    def change_self_color(self):
+        #Changes the color mode and then calls the reset_color function
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
 
     def attach(self, text, widget):
         #Attach the text widget
@@ -825,7 +1066,7 @@ class search_text(Frame):
             self.test_replace()
 
 #Create template classes
-class temp_name_pop_up:
+class temp_name_pop_up(Frame):
     def __init__(self, text_info, **kwargs):
         #Get necessary variables
         self.color_mode = kwargs.pop("color_mode")
@@ -839,18 +1080,19 @@ class temp_name_pop_up:
             bg = light_mode_bg
             fg = light_mode_fg
         self.text_info = text_info.get("1.0", "end-1c")
+        #Initialize Frame
+        Frame.__init__(self, bg=bg)
         #Create window
         self.pop_up_window = Toplevel()
         self.pop_up_window.title("Template Name")
         self.pop_up_window.config(bg=bg)
         self.pop_up_window.geometry("300x100+{}+{}".format(self.x, self.y))
         self.pop_up_window.resizable(width=False, height=False)
-        self.pop_up_window.focus_force()
         self.pop_up_window.attributes("-topmost", True)
-        self.pop_up_name_label = Label(self.pop_up_window, text="Template Name:", font=normal_font)
+        self.pop_up_name_label = Label(self.pop_up_window, text="Template Name:", font=medium_font)
         self.pop_up_name_label.place(relx=.5, rely=.1, anchor=CENTER)
         self.pop_up_name_label.configure(bg=bg, fg=fg)
-        self.pop_up_name_entry = Entry(self.pop_up_window, font=normal_font, borderwidth=3, relief=SUNKEN)
+        self.pop_up_name_entry = Entry(self.pop_up_window, font=normal_font, borderwidth=3, relief=SUNKEN, justify=CENTER)
         self.pop_up_name_entry.place(relx=.5, rely=.4, anchor=CENTER)
         self.pop_up_name_entry.configure(bg=bg, insertbackground = fg, fg=fg)
         self.confirm_button = Button(self.pop_up_window, text="Confirm", font=normal_font, command=self.confirm)
@@ -859,6 +1101,34 @@ class temp_name_pop_up:
         self.cancel_button = Button(self.pop_up_window, text="Cancel", font=normal_font, command=self.cancel)
         self.cancel_button.place(relx=.875, rely=.85, anchor=CENTER)
         self.cancel_button.configure(highlightbackground=bg)
+        self.pop_up_window.protocol("WM_DELETE_WINDOW", self.cancel)
+
+    def reset_color(self):
+        #Reset colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.pop_up_window.config(bg=bg)
+        self.pop_up_name_label.configure(bg=bg, fg=fg)
+        self.pop_up_name_entry.configure(bg=bg, insertbackground=fg, fg=fg)
+        self.confirm_button.configure(highlightbackground=bg)
+        self.cancel_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.pop_up_name_label.configure(font=medium_font)
+        self.pop_up_name_entry.configure(font=normal_font)
+        self.confirm_button.configure(font=normal_font)
+        self.cancel_button.configure(font=normal_font)
+
+    def change_self_color(self):
+        #Change the color and then reset
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
 
     def confirm(self):
         #Confirm the template name
@@ -872,13 +1142,16 @@ class temp_name_pop_up:
                     f.close()
                 showinfo("Template Created", "Template Created\n\nTemplate Has Been Created")
                 self.pop_up_window.destroy()
+                self.destroy()
             else:
                 showwarning("Template Name Error", "A Template Naming Error Has Occurred\n\nTemplate Name Cannot be Blank")
+
     def cancel(self):
         #Cancel the template creation
         global temp_name
         temp_name = None
         self.pop_up_window.destroy()
+        self.destroy()
 
 #Create template classes
 class temp_open_pop_up(Frame):
@@ -898,7 +1171,6 @@ class temp_open_pop_up(Frame):
             bg = light_mode_bg
             fg = light_mode_fg
         self.temp_open_pop_up_window = Toplevel()
-        self.temp_open_pop_up_window.focus_force()
         self.temp_open_pop_up_window.title("Template Selection")
         self.temp_open_pop_up_window.config(bg=bg)
         self.temp_open_pop_up_window.geometry("400x300+{}+{}".format(self.x, self.y))
@@ -915,7 +1187,7 @@ class temp_open_pop_up(Frame):
         self.temp_open_pop_up_label.configure(bg=bg, fg=fg)
         self.temp_open_pop_up_listbox = Listbox(self.temp_open_pop_up_window, width=30, height=10)
         self.temp_open_pop_up_listbox.place(relx=.5, rely=.5, anchor=CENTER)
-        self.temp_open_pop_up_listbox.configure(selectbackground=bg, selectforeground=fg)
+        self.temp_open_pop_up_listbox.configure(bg=bg, selectbackground=bg, selectforeground=fg, fg=fg)
         for item in self.templates_list:
             item = item.split(".py")[0]
             self.temp_open_pop_up_listbox.insert(END, item)
@@ -926,12 +1198,40 @@ class temp_open_pop_up(Frame):
         self.export_button.configure( highlightbackground=bg)
         ToolTip(self.export_button, text="Export Template", window=self.temp_open_pop_up_window)
         self.confirm_button = Button(self.temp_open_pop_up_window, text="Confirm", font=normal_font, command=self.confirm)
-        self.confirm_button.place(relx=.1, rely=.95, anchor=CENTER)
+        self.confirm_button.pack(anchor=S, side=LEFT)
         self.confirm_button.configure(highlightbackground=bg)
         self.cancel_button = Button(self.temp_open_pop_up_window, text="Cancel", font=normal_font, command=self.cancel)
-        self.cancel_button.place(relx=.9, rely=.95, anchor=CENTER)
+        self.cancel_button.pack(anchor=S, side=RIGHT)
         self.cancel_button.configure(highlightbackground=bg)
-        self.temp_open_pop_up_window.mainloop()
+        self.temp_open_pop_up_window.protocol("WM_DELETE_WINDOW", self.cancel)
+
+    def reset_color(self):
+        #Reset colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.temp_open_pop_up_window.config(bg=bg)
+        self.temp_open_pop_up_label.configure(bg=bg, fg=fg)
+        self.temp_open_pop_up_listbox.configure(bg=bg, selectbackground=bg, selectforeground=fg, fg=fg)
+        self.export_button.configure(highlightbackground=bg)
+        self.confirm_button.configure(highlightbackground=bg)
+        self.cancel_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.temp_open_pop_up_label.config(font=medium_font)
+        self.temp_open_pop_up_listbox.config(font=normal_font)
+        self.confirm_button.config(font=normal_font)
+        self.cancel_button.config(font=normal_font)
+
+    def change_self_color(self):
+        #Change colors
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
 
     def export_template(self):
         #Allow the user to export the template
@@ -966,8 +1266,9 @@ class temp_open_pop_up(Frame):
     def cancel(self):
         #Cancel the template selection
         self.temp_open_pop_up_window.destroy()
+        self.destroy()
 
-class temp_destroy_pop_up:
+class temp_destroy_pop_up(Frame):
     def __init__(self, **kwargs):
         #Get necessary variables
         self.color_mode = kwargs.pop("color_mode")
@@ -981,12 +1282,13 @@ class temp_destroy_pop_up:
             bg = light_mode_bg
             fg = light_mode_fg
         #Create Frame
+        Frame.__init__(self, **kwargs)
+        #Initialize window
         self.temp_destroy_pop_up_window = Toplevel()
         self.temp_destroy_pop_up_window.title("Template Selection")
         self.temp_destroy_pop_up_window.config(bg=bg)
         self.temp_destroy_pop_up_window.geometry("400x300+{}+{}".format(self.x, self.y))
         self.temp_destroy_pop_up_window.resizable(width=False, height=False)
-        self.temp_destroy_pop_up_window.focus_force()
         self.temp_destroy_pop_up_window.attributes("-topmost", True)
         self.templates_start_list = listdir(folder)
         self.templates_list = []
@@ -999,7 +1301,7 @@ class temp_destroy_pop_up:
         self.temp_destroy_pop_up_label.configure(bg=bg, fg=fg)
         self.temp_destroy_pop_up_listbox = Listbox(self.temp_destroy_pop_up_window, width=30, height=10)
         self.temp_destroy_pop_up_listbox.place(relx=.5, rely=.5, anchor=CENTER)
-        self.temp_destroy_pop_up_listbox.configure(selectbackground=bg, selectforeground=fg)
+        self.temp_destroy_pop_up_listbox.configure(bg=bg, selectbackground=bg, selectforeground=fg, fg=fg)
         for item in self.templates_list:
             item = item.split(".py")[0]
             self.temp_destroy_pop_up_listbox.insert(END, item)
@@ -1010,11 +1312,38 @@ class temp_destroy_pop_up:
         self.cancel_button = Button(self.temp_destroy_pop_up_window, text="Cancel", font=normal_font, command=self.cancel)
         self.cancel_button.place(relx=.9, rely=.95, anchor=CENTER)
         self.cancel_button.configure(highlightbackground=bg)
+        self.temp_destroy_pop_up_window.protocol("WM_DELETE_WINDOW", self.cancel)
+
+    def reset_color(self):
+        #Change colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        #Change colors
+        self.temp_destroy_pop_up_window.configure(bg=bg)
+        self.temp_destroy_pop_up_label.configure(bg=bg, fg=fg)
+        self.temp_destroy_pop_up_listbox.configure(bg=bg, selectbackground=bg, selectforeground=fg, fg=fg)
+        self.confirm_button.configure(highlightbackground=bg)
+        self.cancel_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.temp_destroy_pop_up_label.configure(font=medium_font)
+        self.confirm_button.configure(font=normal_font)
+        self.cancel_button.configure(font=normal_font)
+        
+    def change_self_color(self):
+            #Change color_mode and then call the reset_color function
+            if self.color_mode == "Dark":
+                self.color_mode = "light"
+            else:
+                self.color_mode = "Dark"
+            self.reset_color()
 
     def confirm(self, event=None):
         #Confirm the template selection
         confirmation = askyesno("Confirmation", "File Deletion Confirmation\n\nAre You Sure You Want To Delete This Template?")
-        print(confirmation)
         if confirmation == True:
             self.file_chosen = self.temp_destroy_pop_up_listbox.get(ANCHOR) + ".py"
             if self.file_chosen != ".py":
@@ -1027,12 +1356,14 @@ class temp_destroy_pop_up:
     def cancel(self):
         #Cancel the template selection
         self.temp_destroy_pop_up_window.destroy()
+        self.destroy()
 
 #Create settings class
 class settings(Frame):
     def __init__(self, *args, **kwargs):
         #Get necessary variables
         self.window = kwargs.pop("window")
+        self.function = kwargs.pop("function")
         self.color_mode = kwargs.pop("color_mode")
         self.x = kwargs.pop("x")
         self.y = kwargs.pop("y")
@@ -1052,11 +1383,9 @@ class settings(Frame):
         self.settings_window.geometry("375x450+{}+{}".format(self.x, self.y))
         self.settings_window.resizable(width=False, height=False)
         self.settings_window.attributes("-topmost", True)
-        self.settings_window.focus_force()
         self.settings_window_main_label = Label(self.settings_window, text="Settings", font=large_font)
         self.settings_window_main_label.place(relx=.5, rely=.075, anchor=CENTER)
         self.settings_window_main_label.configure(bg=bg, fg=fg)
-        # tag_mygroup
         # tag_comment 
         # tag_keyword 
         # tag_builtin 
@@ -1089,21 +1418,65 @@ class settings(Frame):
         self.keyword_changer_button.configure(highlightbackground=bg)
         #import keywords.txt button
         #export keywords.txt button
-        import_keywords_button = Button(self.settings_window, text="Import Keywords", font=medium_font, width=22, command=self.import_keywords)
-        import_keywords_button.place(relx=.5, rely=.7944, anchor=CENTER)
-        import_keywords_button.configure(highlightbackground=bg)
-        export_keywords_button = Button(self.settings_window, text="Export Keywords", font=medium_font, width=22, command=self.export_keywords)
-        export_keywords_button.place(relx=.5, rely=.87495, anchor=CENTER)
-        export_keywords_button.configure(highlightbackground=bg)
+        self.import_keywords_button = Button(self.settings_window, text="Import Keywords", font=medium_font, width=22, command=self.import_keywords)
+        self.import_keywords_button.place(relx=.5, rely=.7944, anchor=CENTER)
+        self.import_keywords_button.configure(highlightbackground=bg)
+        self.export_keywords_button = Button(self.settings_window, text="Export Keywords", font=medium_font, width=22, command=self.export_keywords)
+        self.export_keywords_button.place(relx=.5, rely=.87495, anchor=CENTER)
+        self.export_keywords_button.configure(highlightbackground=bg)
         self.quit_button = Button(self.settings_window, text="Quit", font=normal_font, command=self.quit)
         self.quit_button.place(relx=.5, rely=.95, anchor=CENTER)
         self.quit_button.configure(highlightbackground=bg)
+        self.settings_window.protocol("WM_DELETE_WINDOW", self.quit)
+
+    def reset_color(self):
+        #Reset colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.settings_window.configure(background=bg)
+        self.settings_window_main_label.configure(bg=bg, fg=fg)
+        self.my_group_color_changer_button.configure(highlightbackground=bg)
+        self.comment_color_changer_button.configure(highlightbackground=bg)
+        self.keyword_color_changer_button.configure(highlightbackground=bg)
+        self.builtin_color_changer_button.configure(highlightbackground=bg)
+        self.string_color_changer_button.configure(highlightbackground=bg)
+        self.definition_color_changer_button.configure(highlightbackground=bg)
+        self.class_color_changer_button.configure(highlightbackground=bg)
+        self.keyword_changer_button.configure(highlightbackground=bg)
+        self.import_keywords_button.configure(highlightbackground=bg)
+        self.export_keywords_button.configure(highlightbackground=bg)
+        self.quit_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.settings_window_main_label.configure(font=large_font)
+        self.my_group_color_changer_button.configure(font=medium_font)
+        self.comment_color_changer_button.configure(font=medium_font)
+        self.keyword_color_changer_button.configure(font=medium_font)
+        self.builtin_color_changer_button.configure(font=medium_font)
+        self.string_color_changer_button.configure(font=medium_font)
+        self.definition_color_changer_button.configure(font=medium_font)
+        self.class_color_changer_button.configure(font=medium_font)
+        self.keyword_changer_button.configure(font=medium_font)
+        self.import_keywords_button.configure(font=medium_font)
+        self.export_keywords_button.configure(font=medium_font)
+        self.quit_button.configure(font=normal_font)
+
+    def change_self_color(self):
+        #Change color_mode and then reset colors
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
 
     def import_keywords(self):
         #Allow user to import keywords
         global keywords_list
         #Get the file path
-        file_path = askopenfilename(initialdir="/", title="Select file", filetypes=([("Text files", "*.txt")]))
+        file_path = askopenfilename(initialdir="/", filetypes=([("Text files", "*.txt")]))
         #Check that the file path is not empty and the name is keywords.txt
         if file_path != "":
             #update the keywords list
@@ -1119,7 +1492,7 @@ class settings(Frame):
 
     def export_keywords(self):
         #Allow user to export keywords
-        file_path = asksaveasfilename(initialdir="/", title="Select file", filetypes=([("Text files", "*.txt")]))
+        file_path = asksaveasfilename(initialdir="/", filetypes=([("Text files", "*.txt")]))
         if file_path != "":
             #open the file
             with open(file_path, "w") as file:
@@ -1129,7 +1502,7 @@ class settings(Frame):
 
     def color_changer(self, index):
         #Allow user to change the color of the selected tag
-        color = colorchooser.askcolor(title="Choose color")
+        color = colorchooser.askcolor()
         if color[1] != None:
             hex = (str(color).split(",")[3].split("'")[1])
             with open(folder / "settings.txt", "r+") as settings:
@@ -1141,7 +1514,8 @@ class settings(Frame):
                 settings.truncate()
                 settings.seek(0)
                 settings.writelines(settings_info)
-            showinfo("Color Not Changed", "Color Has Not Been Changed Yet\n\nFor Syntax Colors To Change JDE Must Be Closed and Then Re-Opened Or The Reset-Syntax Button Must Be Pressed")
+            self.function()
+            showinfo("Syntax Color Reset Successful", "Syntax Color Reset Successful\n\nThe Syntax Highlighting Has Been Reset", parent=self.settings_window)
 
     def my_group_color_changer(self):
         #Allow user to change the color of the my group tag
@@ -1174,6 +1548,7 @@ class settings(Frame):
     def quit(self):
         #Close the settings window
         self.settings_window.destroy()
+        self.destroy()
 
     def keyword_changer(self):
         #Open the keyword changer window
@@ -1202,28 +1577,62 @@ class report_bug(Frame):
         self.report_bug_window.geometry("410x350+{}+{}".format(self.x, self.y))
         self.report_bug_window.resizable(width=False, height=False)
         self.report_bug_window.attributes("-topmost", True)
-        self.report_bug_window.focus_force()
         self.report_bug_window_main_label = Label(self.report_bug_window, text="Report Bug", font=large_font)
         self.report_bug_window_main_label.place(relx=.5, rely=.075, anchor=CENTER)
         self.report_bug_window_main_label.configure(bg=bg, fg=fg)
         self.report_bug_window_text_label = Label(self.report_bug_window, text="Subject:", font=normal_font)
         self.report_bug_window_text_label.place(relx=.5, rely=.175, anchor=CENTER)
         self.report_bug_window_text_label.configure(bg=bg, fg=fg)
-        self.subject_entry = Entry(self.report_bug_window, borderwidth=3, relief=SUNKEN, width=40)
+        self.subject_entry = Entry(self.report_bug_window, borderwidth=3, relief=SUNKEN, width=40, justify=CENTER, font=normal_font)
         self.subject_entry.place(relx=.5, rely=.25, anchor=CENTER)
         self.subject_entry.configure(bg=bg, insertbackground=fg, fg=fg)
         self.message_text_label = Label(self.report_bug_window, text="Message:", font=normal_font)
         self.message_text_label.place(relx=.5, rely=.33, anchor=CENTER)
         self.message_text_label.configure(bg=bg, fg=fg)
-        self.message_text = Text(self.report_bug_window, borderwidth=3, relief=SUNKEN, width=50, height=10)
+        self.message_text = Text(self.report_bug_window, borderwidth=3, relief=SUNKEN, width=40, height=8.25, font=normal_font)
         self.message_text.place(relx=.5, rely=.6, anchor=CENTER)
         self.message_text.configure(bg=bg, insertbackground=fg, fg=fg)
+        # self.message_text.insert(END, "This is meant for:\nA) A bug in the program\nB) A feature request\nC) A suggestion\n\nIf this is a bug report please give as much detail as possible and include the steps to reproduce the bug")
         self.report_bug_button = Button(self.report_bug_window, text="Report Bug", font=normal_font, command=self.report_bug)
         self.report_bug_button.place(relx=.5, rely=.875, anchor=CENTER)
         self.report_bug_button.configure(highlightbackground=bg)
         self.quit_button = Button(self.report_bug_window, text="Quit", font=normal_font, command=self.quit)
         self.quit_button.place(relx=.5, rely=.95, anchor=CENTER)
         self.quit_button.configure(highlightbackground=bg)
+        self.report_bug_window.protocol("WM_DELETE_WINDOW", self.quit)
+
+    def reset_color(self):
+        #Reset the colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.report_bug_window.configure(background=bg)
+        self.report_bug_window_main_label.configure(bg=bg, fg=fg)
+        self.report_bug_window_text_label.configure(bg=bg, fg=fg)
+        self.subject_entry.configure(bg=bg, insertbackground=fg, fg=fg)
+        self.message_text_label.configure(bg=bg, fg=fg)
+        self.message_text.configure(bg=bg, insertbackground=fg, fg=fg)
+        self.report_bug_button.configure(highlightbackground=bg)
+        self.quit_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.report_bug_window_main_label.configure(font=large_font)
+        self.report_bug_window_text_label.configure(font=normal_font)
+        self.subject_entry.configure(font=normal_font)
+        self.message_text_label.configure(font=normal_font)
+        self.message_text.configure(font=normal_font)
+        self.report_bug_button.configure(font=normal_font)
+        self.quit_button.configure(font=normal_font)
+
+    def change_self_color(self):
+        #Change color_mode and then reset the colors
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
 
     def report_bug(self):
         #Send the bug report
@@ -1250,6 +1659,7 @@ class report_bug(Frame):
     def quit(self):
         #Close the report bug window
         self.report_bug_window.destroy()
+        self.destroy()
 
 #Create the help window
 class help_info(Frame):
@@ -1274,11 +1684,10 @@ class help_info(Frame):
         self.help_info_window.configure(background=bg)
         self.help_info_window.resizable(width=False, height=False)
         self.help_info_window.attributes("-topmost", True)
-        self.help_info_window.focus_force()
         self.help_info_window_main_label = Label(self.help_info_window, text="Help", font=large_font)
         self.help_info_window_main_label.place(relx=.5, rely=.055, anchor=CENTER)
         self.help_info_window_main_label.configure(bg=bg, fg=fg)
-        self.info_text = Text(self.help_info_window, borderwidth=3, relief=SUNKEN, width=50, height=20)
+        self.info_text = Text(self.help_info_window, borderwidth=3, relief=SUNKEN, width=40, height=18, font=normal_font)
         self.info_text.insert("1.0", "- Clear-CMD: Clears the terminal\n- StackOverflow: Opens StackOverflow\n- Create-Temp: Creates template\n- Open-Temp: Opens template\n- Delete-Temp: Deletes template")
         self.info_text.config(state=DISABLED)
         self.info_text.place(relx=.5, rely=.5, anchor=CENTER)
@@ -1286,10 +1695,37 @@ class help_info(Frame):
         self.ok_button = Button(self.help_info_window, text="Ok", font=normal_font, command=self.ok)
         self.ok_button.place(relx=.5, rely=.95, anchor=CENTER)
         self.ok_button.configure(highlightbackground=bg)
+        self.help_info_window.protocol("WM_DELETE_WINDOW", self.ok)
+
+    def reset_color(self):
+        #Reset the colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.help_info_window.configure(background=bg)
+        self.help_info_window_main_label.configure(bg=bg, fg=fg)
+        self.info_text.configure(bg=bg, insertbackground=fg, fg=fg)
+        self.ok_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.help_info_window_main_label.configure(font=large_font)
+        self.info_text.configure(font=normal_font)
+        self.ok_button.configure(font=normal_font)
+
+    def change_self_color(self):
+        #Change color_mode and then reset the colors
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
 
     def ok(self):
         #Close the help window
         self.help_info_window.destroy()
+        self.destroy()
 
 #Create the shortcut window
 class shortcuts_page(Frame):
@@ -1314,7 +1750,6 @@ class shortcuts_page(Frame):
         self.shortcuts_page_window.configure(background=bg)
         self.shortcuts_page_window.resizable(width=False, height=False)
         self.shortcuts_page_window.attributes("-topmost", True)
-        self.shortcuts_page_window.focus_force()
         self.shortcuts_page_main_label = Label(self.shortcuts_page_window, text="Shortcuts", font=large_font)
         self.shortcuts_page_main_label.place(relx=.5, rely=.055, anchor=CENTER)
         self.shortcuts_page_main_label.configure(bg=bg, fg=fg)
@@ -1326,10 +1761,39 @@ class shortcuts_page(Frame):
         self.ok_button = Button(self.shortcuts_page_window, text="Ok", font=normal_font, command=self.ok)
         self.ok_button.place(relx=.5, rely=.95, anchor=CENTER)
         self.ok_button.configure(highlightbackground=bg)
+        self.shortcuts_page_window.protocol("WM_DELETE_WINDOW", self.ok)
+
+    def reset_color(self):
+        #Reset the colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        #Reset the window
+        self.shortcuts_page_window.configure(background=bg)
+        self.shortcuts_page_main_label.configure(bg=bg, fg=fg)
+        self.info_text.configure(bg=bg, insertbackground=fg, fg=fg)
+        self.ok_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.shortcuts_page_main_label.configure(font=large_font)
+        self.info_text.configure(font=normal_font)
+        self.ok_button.configure(font=normal_font)
+
+    def change_self_color(self):
+        #Change the colors
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        #Call the reset color function
+        self.reset_color()
 
     def ok(self):
         #Close the shortcuts window
         self.shortcuts_page_window.destroy()
+        self.destroy()
 
 #Create the keyword change window
 class keyword_change_page(Frame):
@@ -1353,16 +1817,15 @@ class keyword_change_page(Frame):
         self.keyword_change_page_window.configure(background=bg)
         self.keyword_change_page_window.resizable(width=False, height=False)
         self.keyword_change_page_window.attributes("-topmost", True)
-        self.keyword_change_page_window.focus_force()
         self.keyword_change_page_main_label = Label(self.keyword_change_page_window, text="Keyword Change", font=large_font)
         self.keyword_change_page_main_label.place(relx=.5, rely=.055, anchor=CENTER)
         self.keyword_change_page_main_label.configure(bg=bg, fg=fg)
         self.keyword_listbox = Listbox(self.keyword_change_page_window, width=30, height=10)
         self.keyword_listbox.place(relx=.5, rely=.325, anchor=CENTER)
-        self.keyword_listbox.configure(bg=bg, fg=fg, selectbackground=bg, selectforeground=fg)
+        self.keyword_listbox.configure(bg=bg, selectbackground=bg, selectforeground=fg, fg=fg)
         for item in keywords_list:
             self.keyword_listbox.insert(END, item)
-        self.add_entry = Entry(self.keyword_change_page_window, width=30, borderwidth=3, relief=SUNKEN)
+        self.add_entry = Entry(self.keyword_change_page_window, width=30, borderwidth=3, relief=SUNKEN, justify=CENTER, font=normal_font)
         self.add_entry.place(relx=.5, rely=.525, anchor=CENTER)
         self.add_entry.configure(bg=bg, fg=fg, insertbackground=fg)
         self.add_button = Button(self.keyword_change_page_window, text="Add Item", font=normal_font, width=15, command=self.add)
@@ -1387,6 +1850,47 @@ class keyword_change_page(Frame):
         self.ok_button = Button(self.keyword_change_page_window, text="Ok", font=normal_font, command=self.ok)
         self.ok_button.place(relx=.5, rely=.95, anchor=CENTER)
         self.ok_button.configure(highlightbackground=bg)
+        self.keyword_change_page_window.protocol("WM_DELETE_WINDOW", self.ok)
+
+    def reset_color(self):
+        #Reset the colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.keyword_change_page_window.configure(background=bg)
+        self.keyword_change_page_main_label.configure(bg=bg, fg=fg)
+        self.keyword_listbox.configure(bg=bg, fg=fg, selectbackground=bg, selectforeground=fg)
+        self.add_entry.configure(bg=bg, fg=fg, insertbackground=fg)
+        self.add_button.configure(highlightbackground=bg)
+        self.remove_button.configure(highlightbackground=bg)
+        self.move_up_button.configure(highlightbackground=bg)
+        self.move_to_top_button.configure(highlightbackground=bg)
+        self.move_down_button.configure(highlightbackground=bg)
+        self.move_to_bottom_button.configure(highlightbackground=bg)
+        self.move_to_middle_button.configure(highlightbackground=bg)
+        self.ok_button.configure(highlightbackground=bg)
+        #Update fonts
+        self.keyword_change_page_main_label.configure(font=large_font)
+        self.add_entry.configure(font=normal_font)
+        self.add_button.configure(font=normal_font)
+        self.remove_button.configure(font=normal_font)
+        self.move_up_button.configure(font=normal_font)
+        self.move_to_top_button.configure(font=normal_font)
+        self.move_down_button.configure(font=normal_font)
+        self.move_to_bottom_button.configure(font=normal_font)
+        self.move_to_middle_button.configure(font=normal_font)
+        self.ok_button.configure(font=normal_font)
+
+    def change_self_color(self):
+        #Change the colors and then call the reset_color function
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
 
     def add(self):
         #Add the item to the list
@@ -1472,6 +1976,7 @@ class keyword_change_page(Frame):
     def ok(self):
         #Close the window
         self.keyword_change_page_window.destroy()
+        self.destroy()
 
 #Create the extension class
 class extension_page(Frame):
@@ -1521,28 +2026,30 @@ class extension_page(Frame):
             #Put Defualt to front of list
             self.search_var = StringVar()
             self.search_var.trace("w", self.update_listbox)
-            self.searchbox = Entry(self.extension_page_window, textvariable=self.search_var, font=normal_font, relief=SUNKEN, borderwidth=3)
+            self.searchbox = Entry(self.extension_page_window, textvariable=self.search_var, font=normal_font, relief=SUNKEN, borderwidth=3, justify=CENTER)
             self.searchbox.pack(fill=X, expand=False)
             self.searchbox.config(background=bg, foreground=fg, insertbackground=bg)
             self.extensions_listbox = Listbox(self.extension_page_window, font=normal_font, relief=SUNKEN, borderwidth=3, width=50, height=20)
             self.extensions_listbox.pack(fill=X)
-            self.extensions_listbox.config(background=bg, foreground=fg, selectbackground=bg, selectforeground=fg)
+            self.extensions_listbox.config(bg=bg, selectbackground=bg, selectforeground=fg, fg=fg)
             self.extensions_listbox.bind("<Double-Button-1>", self.inspect_extension)
             for extension in self.extensions_list:
                 self.extensions_listbox.insert(END, extension)
             self.update_listbox()
-            self.inpect_extension_button = Button(self.extension_page_window, text="Inspect Extension", command=self.inspect_extension, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
+            self.inpect_extension_button = Button(self.extension_page_window, text="Inspect Extension", command=self.inspect_extension, font=normal_font, relief=SUNKEN, width=20)
             self.inpect_extension_button.pack()
             self.inpect_extension_button.config(highlightbackground=bg)
-            self.use_extension_button = Button(self.extension_page_window, text="Use Extension", command=self.use_extension, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
+            self.use_extension_button = Button(self.extension_page_window, text="Use Extension", command=self.use_extension, font=normal_font, relief=SUNKEN, width=20)
             self.use_extension_button.pack()
             self.use_extension_button.config(highlightbackground=bg)
-            self.cancel_button = Button(self.extension_page_window, text="Cancel", command=self.cancel, font=normal_font, relief=SUNKEN, borderwidth=3, width=20)
+            self.cancel_button = Button(self.extension_page_window, text="Cancel", command=self.cancel, font=normal_font, relief=SUNKEN, width=20)
             self.cancel_button.pack()
             self.cancel_button.config(highlightbackground=bg)
+            self.extension_page_window.protocol("WM_DELETE_WINDOW", self.cancel)
         except:
             showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later")
             self.extension_page_window.destroy()
+            self.destroy()
 
     def update_listbox(self, *args):
         #Update the listbox
@@ -1552,13 +2059,42 @@ class extension_page(Frame):
             if search_term.lower() in item.lower():
                 self.extensions_listbox.insert(END, item)
 
+    def reset_color(self):
+        #Reset colors of all widgets to match the color mode
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.extension_page_window.configure(bg=bg)
+        self.searchbox.config(background=bg, foreground=fg, insertbackground=bg)
+        self.extensions_listbox.config(background=bg, foreground=fg, selectbackground=bg, selectforeground=fg)
+        self.inpect_extension_button.config(highlightbackground=bg)
+        self.use_extension_button.config(highlightbackground=bg)
+        self.cancel_button.config(highlightbackground=bg)
+        #Update fonts
+        self.searchbox.config(font=normal_font)
+        self.extensions_listbox.config(font=normal_font)
+        self.inpect_extension_button.config(font=normal_font)
+        self.use_extension_button.config(font=normal_font)
+        self.cancel_button.config(font=normal_font)
+
+    def change_self_color(self):
+        #Change the color
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
+
     def inspect_extension(self, event=None):
         #Inspect the extension
         if self.extensions_listbox.get(ANCHOR) != "":
             extension = self.extensions_listbox.get(ANCHOR)
             try:
                 self.function(extension)
-                self.extension_page_window.destroy()
+                # self.extension_page_window.destroy()
             except:
                 showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later")
         else:
@@ -1596,12 +2132,18 @@ class extension_page(Frame):
                     if current_mode == "light" and self.color_mode == "light":
                         self.change_color()
                         self.change_color()
+                        self.change_self_color()
+                        self.change_self_color()
                     elif current_mode == "light" and self.color_mode == "Dark":
                         self.change_color()
+                        self.change_self_color()
                     elif current_mode == "Dark" and self.color_mode == "Dark":
                         self.change_color()
                         self.change_color()
+                        self.change_self_color()
+                        self.change_self_color()
                     elif current_mode == "Dark" and self.color_mode == "light":
+                        self.change_color()
                         self.change_color()
                 else:
                     settings = None
@@ -1619,6 +2161,12 @@ class extension_page(Frame):
                     family = family.split(": ")[1]
                     normal = the_font[1]
                     normal = normal.split(": ")[1]
+                    with open(folder / "dilate_size.txt", "w") as dilate_size:
+                        dilate_size.truncate()
+                        dilate_size.seek(0)
+                        dilate_size.truncate()
+                        dilate_size.seek(0)
+                        dilate_size.write(normal)
                     med = the_font[2]
                     med = med.split(": ")[1]
                     large = the_font[3]
@@ -1633,8 +2181,8 @@ class extension_page(Frame):
                         font_file.write(string_font)
                 for text_box in self.text_boxes:
                     text_box.redraw()
-                reset_fonts_colors()
-                self.reset_function(from_extension=True)
+                get_info_from_files()
+                self.reset_function()
                 self.searchbox.config(font=normal_font)
                 self.searchbox.update()
                 self.extensions_listbox.config(font=normal_font)
@@ -1647,15 +2195,17 @@ class extension_page(Frame):
                 self.cancel_button.update()
                 showinfo("Extension Applied", "Extension Applied Successfully\n\nThe Extension: \"{}\" Has Succesfully Been Applied".format(extension), parent=self.extension_page_window)
                 self.extension_page_window.destroy()
+                self.destroy()
             except:
                 showwarning("Extension Error", "An Extension Loading Error Has Occured. Could Not Connect To The Extension Server\n\nPlease Try Again Later", parent=self.extension_page_window)
     def cancel(self):
         #Cancel the extension
         self.extension_page_window.destroy()
+        self.destroy()
 
 #Make a loading screen
 class loading(Frame):
-    def __init__(self, master, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         #Initialize the loading screen
         Frame.__init__(self, *args, **kwargs)
         self.window = Toplevel()
@@ -1677,6 +2227,736 @@ class loading(Frame):
         #Cancel the loading screen
         self.window.destroy()
 
+#Make a go to line popup
+class go_to_line(Toplevel):
+    def __init__(self, x, y, *args, **kwargs):
+        #Retrieve the necessary variables
+        self.color_mode = kwargs.pop("color_mode")
+        self.text = kwargs.pop("text")
+        #Initialize the go to line popup
+        Toplevel.__init__(self, *args, **kwargs)
+        #Create the colors
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        #Set attributes
+        self.title("Go To Line")
+        self.geometry("575x150+{}+{}".format(x, y))
+        self.configure(background=bg)
+        self.resizable(width=False, height=False)
+        self.attributes("-topmost", True)
+        self.main_label = Label(self, text="Go To Line", font=large_font, bg=bg, fg=fg)
+        self.main_label.place(relx=0.5, rely=.125, anchor="center")
+        self.warning_label = Label(self, text="Enter A Positive Integer:", font=normal_font, bg=bg, fg=fg)
+        self.warning_label.place(relx=0.5, rely=.275, anchor="center")
+        self.secondary_warning_label = Label(self, text="(Use Start To Go To Start Of File And End To Go To End Of File)", font=normal_font, bg=bg, fg=fg)
+        self.secondary_warning_label.place(relx=0.5, rely=.425, anchor="center")
+        self.line_entry = Entry(self, font=normal_font, bg=bg, fg=fg, width=30, justify=CENTER, insertbackground=fg)
+        self.line_entry.place(relx=0.5, rely=.6, anchor="center")
+        self.line_entry.focus_force()
+        #Create ok and cancel buttons
+        self.ok_button = Button(self, text="Ok", font=normal_font, command=self.ok, highlightbackground=bg)
+        self.ok_button.place(relx=0.25, rely=.825, anchor="center")
+        self.cancel_button = Button(self, text="Cancel", font=normal_font, command=self.cancel, highlightbackground=bg)
+        self.cancel_button.place(relx=0.75, rely=.825, anchor="center")
+
+    def reset_color(self):
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.configure(background=bg)
+        self.main_label.configure(bg=bg, fg=fg) 
+        self.warning_label.configure(bg=bg, fg=fg)
+        self.secondary_warning_label.configure(bg=bg, fg=fg)
+        self.line_entry.configure(bg=bg, fg=fg)
+        self.ok_button.configure(bg=bg, fg=fg)
+        self.cancel_button.configure(bg=bg, fg=fg)
+        #Update fonts
+        self.main_label.config(font=large_font)
+        self.warning_label.config(font=normal_font)
+        self.secondary_warning_label.config(font=normal_font)
+        self.line_entry.config(font=normal_font)
+        self.ok_button.config(font=normal_font)
+        self.cancel_button.config(font=normal_font)
+
+    def change_self_color(self):
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
+
+    def ok(self):
+        #Check if the line is a positive integer
+        if self.line_entry.get().isdigit() or self.line_entry.get() == "Start" or self.line_entry.get() == "End":
+            #Get the line
+            line = self.line_entry.get()
+            if line == "Start":
+                line = 1
+            elif line == "End":
+                line = self.text.count("\n")
+            else:
+                line = int(line)
+            #If it is, go to the line
+            self.text.text.mark_set("insert", "{}.end".format(line))
+            self.text.text.see(INSERT)
+            self.text.redraw()
+            showinfo("Go To Line", "Go To Line Succesful\n\nSuccessfully Went To Line {}".format(line), parent=self)
+            self.destroy()
+        else:
+            #If it is not, show a warning
+            self.line_entry.delete(0, END)
+            showerror("Line Error", "Line Go To Error\n\nPlease Enter A Positive Integer", parent=self)
+
+    def cancel(self):
+        #Cancel the go to line popup
+        self.destroy()
+
+#Create ExtensionText widget class
+class ExtensionText(Frame):
+    def __init__(self, *args, **kwargs):
+        #Get necessary arguments
+        self.window = kwargs.pop("window")
+        self.color_mode = kwargs.pop("color_mode")
+        #Set up Frame
+        Frame.__init__(self, *args, **kwargs)
+        #Set up color_mode
+        if self.color_mode == "Dark":
+            fg = dark_mode_fg
+            bg = dark_mode_bg
+        else:
+            fg = light_mode_fg
+            bg = light_mode_bg
+
+        update_dilate_size()
+        self.text_font = (font_name, dilate_size)
+
+        #Create base text widget
+        if "height" and "width" in kwargs:
+            self.text = Text(self, height=kwargs["height"], width=kwargs["width"], borderwidth=2, relief=RIDGE, wrap=NONE, undo=True, font=self.text_font)
+        else:
+            #, width=130, height=29
+            self.text = Text(self, font=self.text_font, wrap="none", undo=True, borderwidth=2, relief=RIDGE, width=95, height=25)
+        
+        #Create scrollbar
+        self.scrollbar = Scrollbar(self, orient=VERTICAL, command=self.text.yview)
+        self.text.configure(yscrollcommand=self.scrollbar.set)
+
+        #Create numberLines
+        self.numberLines = TextLineNumbers(self, width=40)
+        self.numberLines.attach(self.text)
+
+        #Pack widgets
+        self.scrollbar.pack(side=RIGHT, fill=Y)
+        self.numberLines.pack(side=LEFT, fill=Y, padx=(5, 0))
+        self.text.pack(side=RIGHT, fill=BOTH, expand=True)
+
+        #Create bindings
+        self.window.bind("<Any>", self.redraw())
+        self.window.bind("<BackSpace>", lambda x: self.after(1, (self.redraw())), add=True)
+        self.text.bind("<Key>", self.onPressDelay)
+        self.text.bind("<Button-1>", self.numberLines.redraw)
+        self.scrollbar.bind("<Button-1>", self.onScrollPress)
+        self.text.bind("<MouseWheel>", self.onPressDelay)
+        self.text.bind("<less>", self.double_less_than)
+        self.text.bind(">", self.close_less_than)
+        self.text.bind("<BackSpace>", self.closing_backspace, add=True)
+        self.text.bind("<KeyRelease-Return>", self.redraw(), add=True)
+        self.text.bind("<Command-Shift-k>", self.delete_line)
+        self.text.bind("<Command-a>", self.select_all)
+
+        self.text.configure(bg=bg, fg=fg, insertbackground=fg)
+        self.numberLines.configure(bg=bg)
+
+    def change_color(self):
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        if self.color_mode == "Dark":
+            fg = dark_mode_fg
+            bg = dark_mode_bg
+        else:
+            fg = light_mode_fg
+            bg = light_mode_bg
+        self.text_font = (font_name, dilate_size)
+        self.text.configure(bg=bg, fg=fg, insertbackground=fg, font=self.text_font)
+        self.numberLines.config(bg=bg)
+
+    def select_all(self, event=None):
+        line_count = self.text.index("end-1c").split(".")[0]
+        for i in range(int(line_count)):
+            self.text.tag_add("sel", "{}.0".format(i+1), "{}.end".format(i+1))
+            if self.text.get("{}.0".format(i+1), "{}.end".format(i+1)) == "":
+                self.text.insert("{}.0".format(i+1), " ")
+            self.text.tag_add("sel", "{}.0".format(i+1), "{}.end".format(i+1))
+        length_of_line = self.text.index("end-1c").split(".")[1]
+        self.text.mark_set("insert", "{}.{}".format(line_count, length_of_line))
+        self.text.see("insert")
+        return "break"
+
+    def increase_font(self, event=None):
+        if int(self.text_font[1])+1 <= int(max):
+            self.text_font = (self.text_font[0], int(self.text_font[1]) + 1)
+            self.text.config(font=self.text_font)
+            self.numberLines.redraw()
+
+    def decrease_font(self, event=None):
+        if int(self.text_font[1])-1 >= int(min):
+            self.text_font = (self.text_font[0], int(self.text_font[1]) - 1)
+            self.text.config(font=self.text_font)
+            self.numberLines.redraw()
+
+    def close_less_than(self, event=None):
+        #Check if the > is being pressed in front of a > and then remove the > if it is
+        try:
+            pos = self.text.index("insert")
+            current_position = int((self.text.index(INSERT)).split(".")[1])
+            current_line_contents = self.text.get("insert linestart", "insert lineend")
+            if current_line_contents[current_position] == ">":
+                new_line_contents = current_line_contents[:current_position] + current_line_contents[current_position+1:]
+                self.text.delete("insert linestart", "insert lineend")
+                self.text.insert("insert", new_line_contents)
+                self.text.mark_set("insert", pos)
+        except:
+            pass
+
+    def closing_backspace(self, event):
+        #Check if the backspace is being pressed in front of a < and then remove the > if it is to the right
+        try:
+            # global insert_char
+            pos = self.text.index("insert")
+            current_position = int((self.text.index(INSERT)).split(".")[1])
+            current_line_contents = self.text.get("insert linestart", "insert lineend")
+            if current_line_contents != "":
+                if current_line_contents[current_position-1] == "<":
+                    special_char = current_line_contents[current_position-1]
+                    if special_char == "<":
+                        insert_char = ">"
+                    #Remove previous char to the left and add a closing parenthesis if it is to the right
+                    new_line_contents = current_line_contents[:current_position-1] + insert_char + current_line_contents[current_position:]
+                    if new_line_contents[current_position] == insert_char:
+                        new_line_contents = new_line_contents[:current_position] + new_line_contents[current_position+1:]
+                    self.text.delete("insert linestart", "insert lineend")
+                    self.text.insert("insert", new_line_contents)
+                    self.text.mark_set("insert", pos)
+        except:
+            pass
+
+    def delete_line(self, event=None):
+        #Deletes the current line
+        try:
+            first_line = int(self.text.index("sel.first").split(".")[0])
+            last_line = int(self.text.index("sel.last").split(".")[0])
+            for line in range(first_line, last_line+1):
+                if line != 1:
+                    self.text.delete("{}.0 - 1 chars".format(line), "{}.end".format(line))
+                    self.redraw()
+                else:
+                    self.text.delete("{}.0".format(line), "{}.end + 1 chars".format(line))
+                    self.redraw()
+        except:
+            # if self.text.get("1.0", "end") != "":
+            self.text.delete("insert linestart", "insert lineend")
+            if self.text.index("insert") != "1.0":
+                self.text.delete("insert -1 chars", "insert")
+                self.redraw()
+            else:
+                self.text.delete("insert", "insert +1 chars")
+                self.redraw()
+
+    def make_find_and_replace(self, x, y, event=None, **kwargs):
+        #Creates a find and replace window
+        color_mode = kwargs.pop("color_mode")
+        self.search_bar = search_text(self, x=x, y=y, color_mode = color_mode)
+        self.search_bar.attach(self.text, self)
+        self.search_bar.focus_set()
+
+    def double_less_than(self, event):
+        #Inserts back parentheses when < is pressed
+        self_anchor = str(self.text.index("insert")).split(".")
+        self.text.insert(INSERT, ">")
+        self.text.mark_set(INSERT, str(self_anchor[0]) + "." + str(int(self_anchor[1])))
+    
+    def onScrollPress(self, *args):
+        #Scrolls the text when mouse wheel is used
+        self.scrollbar.bind("<B1-Motion>", self.numberLines.redraw)
+
+    def onScrollRelease(self, *args):
+        #Unbinds the scrollbar when mouse wheel is released
+        self.scrollbar.unbind("<B1-Motion>", self.numberLines.redraw)
+
+    def onPressDelay(self, *args):
+        #Delays the execution of the onPress function
+        self.after(2, self.numberLines.redraw)
+
+    def get(self, *args, **kwargs):
+        #Allowws for the use of get
+        return self.text.get(*args, **kwargs)
+
+    def insert(self, *args, **kwargs):
+        #Allows for the use of insert
+        return self.text.insert(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        #Allows for the use of delete
+        return self.text.delete(*args, **kwargs)
+
+    def index(self, *args, **kwargs):
+        #Allows for the use of index
+        return self.text.index(*args, **kwargs)
+
+    def redraw(self):
+        #Redraws the text
+        try:
+            self.numberLines.redraw()
+        except:
+            pass
+
+#Get extension name with ExtensionNamer class
+class ExtensionNamer(Toplevel):
+    def __init__(self, master, x, y, callback, color_mode="Dark", *args, **kwargs):
+        #Set color mode
+        self.color_mode = color_mode
+        if self.color_mode == "Dark":
+            self.bg = dark_mode_bg
+            self.fg = dark_mode_fg
+        else:
+            self.bg = light_mode_bg
+            self.fg = light_mode_fg
+        #Initialize the window
+        Toplevel.__init__(self, master, *args, **kwargs)
+        self.callback = callback
+        #Set basic window properties
+        self.title("Extension Naming")
+        self.geometry("300x100+{}+{}".format(x, y))
+        self.attributes("-topmost", True)
+        self.resizable(False, False)
+        #Create the widgets
+        self.extension_name_label = Label(self, text="Extension Name:", font=medium_font)
+        self.extension_name_label.place(relx=0.5, rely=.15, anchor=CENTER)
+        self.extension_name_entry = Entry(self, font=normal_font, width=20, justify=CENTER)
+        self.extension_name_entry.place(relx=0.5, rely=.5, anchor=CENTER)
+        self.confirm_button = Button(self, text="Confirm", font=normal_font, command=self.confirm)
+        self.confirm_button.pack(anchor=S, side=LEFT)
+        self.cancel_button = Button(self, text="Cancel", font=normal_font, command=self.cancel)
+        self.cancel_button.pack(anchor=S, side=RIGHT)
+        self.extension_name_label.config(bg=self.bg, fg=self.fg)
+        self.extension_name_entry.config(bg=self.bg, fg=self.fg, insertbackground=self.fg)
+        self.confirm_button.config(highlightbackground=self.bg)
+        self.cancel_button.config(highlightbackground=self.bg)
+        self.config(bg=self.bg)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+
+    def reset_color(self):
+        #Resets the color of the text
+        self.extension_name_entry.config(fg=self.fg)
+        self.extension_name_label.config(fg=self.fg)
+        self.confirm_button.config(highlightbackground=light_mode_bg)
+        self.cancel_button.config(highlightbackground=self.fg)
+        self.config(bg=self.fg)
+        #Reset fonts
+        self.extension_name_label.config(font=medium_font)
+        self.extension_name_entry.config(font=normal_font)
+        self.confirm_button.config(font=normal_font)
+        self.cancel_button.config(font=normal_font)
+
+    def change_self_color(self):
+        #Change color_mode and then reset color
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
+
+    def confirm(self):
+        #Confirm the extension name
+        self.extension_name = self.extension_name_entry.get()
+        if self.extension_name == "" or self.extension_name == " ":
+            showerror("Extension Naming Error", "Extension Naming Error\n\nExtension Name Was Blank. Please Enter A Name")
+        else:
+            if ".xt" not in self.extension_name:
+                self.extension_name += ".xt"
+            if self.extension_name in listdir(folder):
+                showerror("Extension Naming Error", "Extension Naming Error\n\nThe Extension Name Given Is Already Taken")
+            else:
+                self.callback(self.extension_name)
+                self.destroy()
+
+    def cancel(self):
+        #Cancel the extension name
+        self.extension_name = None
+        self.callback(self.extension_name)
+        self.destroy()
+
+#Class ExtensionOpener
+class ExtensionOpener(Toplevel):
+    def __init__(self, master, x, y, callback, color_mode="Dark", *args, **kwargs):
+        #Set color mode
+        self.color_mode = color_mode
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        #Initialize the window
+        Toplevel.__init__(self, master, *args, **kwargs)
+        self.callback = callback
+        #Set basic window properties
+        self.title("Extension Opener")
+        self.geometry("300x250+{}+{}".format(x, y))
+        self.attributes("-topmost", True)
+        self.resizable(False, False)
+        #Create the widgets
+        self.extension_name_label = Label(self, text="Extension Opener", font=medium_font)
+        self.extension_name_label.place(relx=0.5, rely=.05, anchor=CENTER)
+        self.extensions = []
+        for file in listdir(folder):
+            if file.endswith(".xt"):
+                self.extensions.append(file)
+        self.extensions.sort()
+        self.extension_listbox = Listbox(self, font=normal_font, width=30, height=10)
+        for item in self.extensions:
+            item = item.split(".xt")[0]
+            self.extension_listbox.insert(END, item)
+        self.extension_listbox.place(relx=0.5, rely=.5, anchor=CENTER)
+        self.extension_listbox.bind("<Double-Button-1>", self.confirm)
+        self.confirm_button = Button(self, text="Confirm", font=normal_font, command=self.confirm)
+        self.confirm_button.pack(anchor=S, side=LEFT)
+        self.cancel_button = Button(self, text="Cancel", font=normal_font, command=self.cancel)
+        self.cancel_button.pack(anchor=S, side=RIGHT)
+        self.extension_name_label.config(bg=bg, fg=fg)
+        self.extension_listbox.config(bg=bg, fg=fg)
+        self.confirm_button.config(highlightbackground=bg)
+        self.cancel_button.config(highlightbackground=bg)
+        self.config(bg=bg)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+
+    def reset_color(self):
+        #Resets the color of the text
+        self.extension_name_label.config(fg=light_mode_fg)
+        self.extension_listbox.config(fg=light_mode_fg)
+        self.confirm_button.config(highlightbackground=light_mode_bg)
+        self.cancel_button.config(highlightbackground=light_mode_bg)
+        self.config(bg=light_mode_bg)
+        #Reset fonts
+        self.extension_name_label.config(font=medium_font)
+        self.extension_listbox.config(font=normal_font)
+        self.confirm_button.config(font=normal_font)
+        self.cancel_button.config(font=normal_font)
+
+    def change_self_color(self):
+        #Change color_mode and then reset color
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
+
+    def confirm(self, event=None):
+        #Confirm the extension name
+        self.extension_name = self.extension_listbox.get(ACTIVE) + ".xt"
+        if self.extension_name == ".xt":
+            self.extension_name = None
+            showerror("Extension Opening Error", "Extension Opening Error\n\nNo Extension Was Selected")
+        self.callback(self.extension_name)
+        self.destroy()
+
+    def cancel(self):
+        #Cancel the extension name
+        self.extension_name = None
+        self.callback(self.extension_name)
+        self.destroy()
+
+#Create ExtensionDeleter class
+class ExtensionDeleter(Toplevel):
+    def __init__(self, master, x, y, color_mode="Dark", *args, **kwargs):
+        #Set color mode
+        self.color_mode = color_mode
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+
+#Create ExtensionEditor class
+class ExtensionEditor(Toplevel):
+    def __init__(self, x=0, y=0, *args, **kwargs):
+        #Get necessary variables
+        self.color_mode = kwargs.pop("color_mode")
+        self.change_color = kwargs.pop("change_color")
+        self.text_boxes = kwargs.pop("text_boxes")
+        self.reset_function = kwargs.pop("reset_function")
+        #Get color
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        #Create window
+        Toplevel.__init__(self, *args, **kwargs)
+        self.withdraw()
+        self.config(background=bg)
+        self.sidebar_frame = Frame(self, bg="#e0dcd4", width=50)
+        self.sidebar_frame.pack(side=LEFT, fill=Y)
+        self.command_y_placement = []
+        commands = 4
+        y_per_command = 100/(commands+1)
+        for i in range(commands):
+            self.command_y_placement.append((y_per_command*(i+1))*.01)
+        self.test_image = PhotoImage(file=(folder / "test.png"))
+        self.test_button = Button(self.sidebar_frame, image=self.test_image, command=self.test)
+        self.test_button.place(relx=.5, rely=self.command_y_placement[0], anchor=CENTER)
+        ToolTip(self.test_button, text="Test the current extension", window=self)
+        self.submit_image = PhotoImage(file=(folder / "submit.png"))
+        self.submit_button = Button(self.sidebar_frame, image=self.submit_image, command=self.submit)
+        self.submit_button.place(relx=.5, rely=self.command_y_placement[1], anchor=CENTER)
+        ToolTip(self.submit_button, text="Submit the current extension", window=self)
+        self.save_image = PhotoImage(file=(folder / "save.png"))
+        self.save_button = Button(self.sidebar_frame, image=self.save_image, command=self.save_file)
+        self.save_button.place(relx=.5, rely=self.command_y_placement[2], anchor=CENTER)
+        ToolTip(self.save_button, text="Save the current extension", window=self)
+        self.open_image = PhotoImage(file=(folder / "open.png"))
+        self.open_button = Button(self.sidebar_frame, image=self.open_image, command=self.open_file)
+        self.open_button.place(relx=.5, rely=self.command_y_placement[3], anchor=CENTER)
+        ToolTip(self.open_button, text="Open past extension", window=self)
+        self.notebook_frame = Frame(self, bg=bg, width=932, height=497)
+        self.notebook_frame.pack(side=LEFT)
+        self.notebook_frame.pack_propagate(False)
+        self.main_notebook = Notebook(self.notebook_frame)
+        self.main_notebook.pack(fill=BOTH, expand=True)
+        self.main_notebook.bind("<Double-Button-1>", self.add_tab_start)
+        self.bind("<Command-t>", self.add_tab_start)
+        self.bind("<Command-w>", lambda: print("w"))
+        self.text_boxes = []
+        self.contents_list = []
+        self.insert_string = "Lines 1-25 are reserved for comments\nThe comment lines do not require any special characters such as \"#\"\nAll other lines are for the legitimate extension\nExtensions cannot access files in real-time and do not run code\nThe structure of an extension is as follows:\nThe first line is the extesion type\nTypes include:\n- Syntax (Is used to edit keywords and settings)\n- Color Theme Changer (Is used to change the color theme)\n- Font (Is used to change the font size and family)\n- Hybrid (Is used to edit more than one of the above)\nThe second line is the permissions required to use the extension\nThese include:\n- keywords.txt\n- settings.txt\n- color_theme.txt\n- font.txt\nThese can be added together using the \"|\" character and can be in any order\nAn example of the second line would be \"color_theme.txt|settings.txt\"\nThe third line is the name of the extension\nThe fourth line is the description of the extension\nThe fifth line is the author of the extension\nThe lines thereafter contain the extension which are detailed in explanation blocks\nExplanation blocks start and end with block holders and start and end with \"<\" and \">\"\nSee the default extension as a reference!"
+        self.finish_adding_tab("NewXT.xt")
+        self.contents_list[-1] = self.insert_string
+        self.update()
+        self.update_idletasks() 
+        self.notebook_frame.update()
+        self.sidebar_frame.update()
+        minimum_height = self.winfo_reqheight()
+        minimum_width = self.winfo_reqwidth()
+        self.geometry("{}x{}+{}+{}".format(minimum_width, minimum_height, x, y))
+        self.resizable(False, False)
+        self.deiconify()
+        self.text_boxes[0].focus_set()
+        self.text_boxes[0].redraw()
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.bind("Command-s", self.save_file)
+
+    def add_tab_start(self, event=None):
+        #Adds a new tab
+        ExtensionNamer(self, self.winfo_x(), self.winfo_y(), callback=self.finish_adding_tab, color_mode=self.color_mode)
+
+    def finish_adding_tab(self, name):
+        if name != None:
+            text_box = ExtensionText(self.main_notebook, color_mode=self.color_mode, window=self)
+            self.text_boxes.append(text_box)
+            text_box.insert("1.0", self.insert_string)
+            self.contents_list.append("")
+            self.main_notebook.add(text_box, text=name)
+            self.title("Extension Editor - {}".format(name))
+            self.main_notebook.select(text_box)
+            text_box.focus_set()
+            text_box.text.mark_set("insert", "1.0")
+            text_box.redraw()
+            self.save_file()
+
+    def remove_tab(self, event=None):
+        #Removes a tab
+        if len(self.text_boxes) > 1:
+            #Get the index of the tab
+            index = self.main_notebook.index("current")
+            #Check for unsaved changes
+            if self.contents_list[index] != self.text_boxes[index].get("1.0", "end-1c"):
+                #Do close function procedure
+                save = askyesno("Save Changes", "Save changes to {}?\n\nDo you want to save the changes to {}?".format(self.main_notebook.tab(index, "text"), self.main_notebook.tab(index, "text")), parent=self)
+                if save:
+                    self.save_file()
+            #Remove the tab
+            self.main_notebook.forget(self.text_boxes[index])
+            #Remove the text box
+            self.text_boxes.pop(index).destroy()
+            #Remove the contents
+            self.contents_list.pop(index)
+            #Update the title
+            self.title("Extension Editor - {}".format(self.main_notebook.tab(self.main_notebook.select(), "text")))
+        else:
+            showwarning("Tab Removal Error", "A Tab Removal Error Has Occured\n\nMust Have More Than One Tab To Remove Tabs", parent=self)
+
+    def test(self):
+        self.save_file()
+        try:
+            #Test the extension by passing the filename of the current extension to the extension opener
+            details = open_test_extension(self.main_notebook.tab(self.main_notebook.select(), "text"))
+            the_keywords = details[5]
+            if the_keywords != None or "":
+                keywords = ""
+                for keyword in the_keywords:
+                    keywords += keyword + "\n"
+                #Remove the last newline
+                keywords = keywords[:-1]
+                #Update folder / keywords.txt
+                with open(folder / "keywords.txt", "w") as f:
+                    f.write(keywords)
+            else:
+                keywords = None
+            the_settings = details[6]
+            if the_settings != None or "":
+                settings = ""
+                for setting in the_settings:
+                    settings += setting + "\n"
+                #Remove the last newline
+                settings = settings[:-1]
+                #Update folder / settings.txt
+                with open(folder / "settings.txt", "w") as settings_file:
+                    settings_file.write(settings)
+                current_mode = settings.split("\n")[-1]
+                if current_mode == "light" and self.color_mode == "light":
+                    self.change_color()
+                    self.change_color()
+                    self.change_self_color()
+                    self.change_self_color()
+                elif current_mode == "light" and self.color_mode == "Dark":
+                    self.change_color()
+                    self.change_self_color()
+                elif current_mode == "Dark" and self.color_mode == "Dark":
+                    self.change_color()
+                    self.change_color()
+                    self.change_self_color()
+                    self.change_self_color()
+                elif current_mode == "Dark" and self.color_mode == "light":
+                    self.change_color()
+                    self.change_color()
+            else:
+                settings = None
+            the_theme = details[7]
+            if the_theme != None or "":
+                the_theme = the_theme[0] + "\n" + the_theme[1]
+                #Update folder / color_theme.txt
+                with open(folder / "color_theme.txt", "w") as color_theme:
+                    color_theme.write(the_theme)
+            else:
+                the_theme = None
+            the_font = details[8]
+            if the_font != None or "":
+                family = the_font[0]
+                family = family.split(": ")[1]
+                normal = the_font[1]
+                normal = normal.split(": ")[1]
+                with open(folder / "dilate_size.txt", "w") as dilate_size:
+                    dilate_size.truncate()
+                    dilate_size.seek(0)
+                    dilate_size.truncate()
+                    dilate_size.seek(0)
+                    dilate_size.write(normal)
+                med = the_font[2]
+                med = med.split(": ")[1]
+                large = the_font[3]
+                large = large.split(": ")[1]
+                min = the_font[4]
+                min = min.split(": ")[1]
+                max = the_font[5]
+                max = max.split(": ")[1]
+                string_font = family + "\n" + normal + "\n" + med + "\n" + large + "\n" + min + "\n" + max
+                #Update folder / font.txt
+                with open(folder / "font.txt", "w") as font_file:
+                    font_file.write(string_font)
+            for text_box in self.text_boxes:
+                text_box.redraw()
+            reset_fonts_colors()
+            self.reset_function()
+            showinfo("Extension Applied", "Extension Applied Successfully\n\nYour extension \"{}\" has been applied successfully.".format(self.main_notebook.tab(self.main_notebook.select(), "text")))
+        except IndexError:
+            showerror("Extension Application Error", "Extension Application Error\n\nThere Was An Error Applying The Extension. Extensions Must Not Be Empty.")
+        except:
+            showerror("Extension Application Error", "An Extension Application Error Has Occurred\n\nPlease Check Your Extension And Try Again.")
+
+    def submit(self):
+        #Submit the extension
+        pass
+
+    def open_file(self):
+        #Open a file
+        ExtensionOpener(self, self.winfo_x(), self.winfo_y(), callback=self.finish_opening, color_mode=self.color_mode)
+
+    def finish_opening(self, name):
+        if name != None:
+            self.finish_adding_tab(name)
+            with open((folder / name), "r") as file:
+                contents = file.read()
+                self.text_boxes[-1].text.delete("1.0", "end")
+                self.text_boxes[-1].text.insert("1.0", contents)
+                self.contents_list[-1] = contents
+                self.text_boxes[-1].redraw()
+                self.text_boxes[-1].focus_force()
+                file.close()
+
+    def reset_color(self):
+        #Resets the color of the window
+        if self.color_mode == "Dark":
+            bg = dark_mode_bg
+            fg = dark_mode_fg
+        else:
+            bg = light_mode_bg
+            fg = light_mode_fg
+        self.config(background=bg)
+        self.notebook_frame.config(bg=bg)
+        for text_box in self.text_boxes:
+            text_box.change_color()
+
+    def change_self_color(self):
+        #Change the color_mode and then reset the color
+        if self.color_mode == "Dark":
+            self.color_mode = "light"
+        else:
+            self.color_mode = "Dark"
+        self.reset_color()
+
+    def save_file(self):
+        with open(folder / self.main_notebook.tab(self.main_notebook.select(), "text"), "w") as file:
+            file.truncate()
+            file.seek(0)
+            file.truncate()
+            file.seek(0)
+            file.write(self.text_boxes[self.main_notebook.index(self.main_notebook.select())].text.get("1.0", "end-1c"))
+            self.contents_list[self.main_notebook.index(self.main_notebook.select())] = self.text_boxes[self.main_notebook.index(self.main_notebook.select())].text.get("1.0", "end-1c")
+
+    def save_from_index(self, index):
+        with open(folder / self.main_notebook.tab(index, "text"), "w") as file:
+            file.truncate()
+            file.seek(0)
+            file.truncate()
+            file.seek(0)
+            file.write(self.text_boxes[index].text.get("1.0", "end-1c"))
+            self.contents_list[index] = self.text_boxes[index].text.get("1.0", "end-1c")
+
+    def close(self):
+        #Closes the window
+        current_contents = []
+        for text_box in self.text_boxes:
+            current_contents.append(text_box.text.get("1.0", "end-1c"))
+        for i in range(len(current_contents)):
+            if current_contents[i] != self.contents_list[i]:
+                save = askyesno("Save Changes", "Save changes to {}?\n\nDo you want to save the changes to {}?".format(self.main_notebook.tab(i, "text"), self.main_notebook.tab(i, "text")), parent=self)
+                if save:
+                    self.save_from_index(i)
+        self.destroy()
+
+
 #Testing purposes
 if __name__ == "__main__":
     root = Tk()
@@ -1686,8 +2966,16 @@ if __name__ == "__main__":
     # width = root.winfo_screenwidth()
     # height = root.winfo_screenheight()
     # root.geometry("{}x{}+0+0".format(width, height))
-    # text = ultra_text(root, window=root, color_mode = "light", have_syntax=True)
-    # text.pack(expand=True, fill=BOTH)
-    temp_destroy_pop_up(x=0, y=0, color_mode="light")
-    root.iconify()
+    # def close_all():
+    #     for child in root.winfo_children():
+    #         # print(child)
+    #         if isinstance(child, ExtensionEditor):
+    #             child.close()
+    #     root.destroy()
+    # root.protocol("WM_DELETE_WINDOW", close_all)
+    text = ultra_text(root, window=root, color_mode = "Dark", have_syntax=True)
+    text.pack(fill="both", expand=True)
+    x = ExtensionEditor(x=50, y=100, color_mode = "Dark", change_color=lambda: print("Changed"), text_boxes = [text], reset_function=lambda: print("Reset"))
+    #self, self.winfo_x(), self.winfo_y(), callback=self.finish_adding_tab, color_mode=self.color_mode
+    #self is toplevel
     root.mainloop()
