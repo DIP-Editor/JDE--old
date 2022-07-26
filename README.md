@@ -1,4 +1,4 @@
-# NOTE: JDE is mostly stable but with the website being down some modifications for the website checking will need to be made for it to run properly. Other than that, it has no major issues to its running
+# NOTE: JDE is stable but is being redone currently
 
 ![#StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)
 <hr>
